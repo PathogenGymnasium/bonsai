@@ -6,6 +6,7 @@ using Bonsai.Design;
 using System.Drawing;
 using System.Reactive;
 using System.Text.RegularExpressions;
+using System.Text;
 
 [assembly: TypeVisualizer(typeof(ObjectTextVisualizer), Target = typeof(object))]
 
@@ -21,7 +22,7 @@ namespace Bonsai.Design
 
         RichTextBox textBox;
         UserControl textPanel;
-        Queue<string> buffer;
+        Queue<char[]> buffer;
         int bufferSize;
 
         /// <inheritdoc/>
@@ -33,7 +34,14 @@ namespace Bonsai.Design
             if (values.Count > 0)
             {
                 base.ShowBuffer(values);
-                textBox.Text = string.Join(Environment.NewLine, buffer);
+                var sb = new StringBuilder();
+                foreach (var line in buffer)
+                {
+                    if (sb.Length > 0)
+                        sb.Append(Environment.NewLine);
+                    sb.Append(line);
+                }
+                textBox.Text = sb.ToString();
                 textPanel.Invalidate();
             }
         }
@@ -42,8 +50,21 @@ namespace Bonsai.Design
         public override void Show(object value)
         {
             value ??= string.Empty;
-            var text = value.ToString();
-            text = Regex.Replace(text, @"\r|\n", string.Empty);
+            var rawText = value.ToString();
+            var text = new char[rawText.Length];
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                text[i] = rawText[i] switch
+                {
+                    '\0' => '␀',
+                    '\n' => '␊',
+                    '\r' => '␍',
+                    //TODO: Other control characters
+                    char c => c,
+                };
+            }
+            
             buffer.Enqueue(text);
             while (buffer.Count > bufferSize)
             {
@@ -54,7 +75,7 @@ namespace Bonsai.Design
         /// <inheritdoc/>
         public override void Load(IServiceProvider provider)
         {
-            buffer = new Queue<string>();
+            buffer = new Queue<char[]>();
             textBox = new RichTextLabel { Dock = DockStyle.Fill };
             textBox.Multiline = true;
             textBox.WordWrap = false;
