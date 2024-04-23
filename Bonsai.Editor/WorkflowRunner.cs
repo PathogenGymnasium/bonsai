@@ -70,20 +70,33 @@ namespace Bonsai.Editor
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add(new ToolStripMenuItem("Stop", null, (sender, e) => cts.Cancel()));
 
-            var notifyIcon = new NotifyIcon();
+            using var notifyIcon = new NotifyIcon();
             notifyIcon.Icon = Properties.Resources.Icon;
             notifyIcon.Text = Path.GetFileName(fileName);
             notifyIcon.ContextMenuStrip = contextMenu;
             notifyIcon.Visible = true;
+
+            var synchronizationContext = new WindowsFormsSynchronizationContext();
             runtimeWorkflow.Finally(() =>
             {
-                notifyIcon.Visible = false;
-                Application.Exit();
+                // Posting the exit to the main thread's winforms sync context is important for two reasons:
+                // 1) If this finally action will be executed on the main thread (IE: the workflow is empty) we need to
+                //    defer Application.Exit until Application.Run, otherwise we're trying to exit a message loop which
+                //    has not even started.
+                // 2) When this finally action executes it will be on a background thread. While Application.Exit can
+                //    be called from any thread, many FormClosed callbacks within Bonsai assume they're running on the
+                //    main thread. Application.Exit invokes the FormClose (and FormClosing) callbacks directly.
+                //
+                // As an added bonus this also ensures any exceptions thrown via Application.Exit (especially those
+                // within FormClose/FormClosing handlers) will be observed as exceptions thrown in a finally action
+                // are silently swallowed.
+                synchronizationContext.Post(_ => Application.Exit(), null);
             }).Subscribe(
                 unit => { },
                 ex => { Console.Error.WriteLine(ex); },
                 () => { },
                 cts.Token);
+
             Application.Run();
         }
 
