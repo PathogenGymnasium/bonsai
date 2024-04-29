@@ -114,6 +114,9 @@ namespace Bonsai
             this IObservable<TSource> source,
             IObservable<TGateOpening> gateOpenings)
         {
+            // Fixes it:
+            // return source.Window(() => gateOpenings)
+            // These overloads seem like they should be the same from a documentation perspective
             return source.Window(gateOpenings)
                          .SelectMany(window => window.Take(1));
         }

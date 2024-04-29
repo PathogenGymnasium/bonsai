@@ -87,9 +87,26 @@ namespace Bonsai.Reactive
             var dueTime = DueTime;
             var scheduler = HighResolutionScheduler.Default;
             var interval = Observable.Timer(Interval, scheduler);
-            return dueTime.HasValue
-                ? source.Gate(interval, dueTime.Value, scheduler)
-                : source.Gate(interval);
+            //var interval = Observable.Interval(Interval, scheduler); // Alternate fix
+            /* I have this partially figured out:
+             * What changed is that this indirectly went from using the
+             * Oversvable.Window(Func<IObservable<>> windowClosingSelector) overload to the
+             * Observable.Window(IObservable<> windowBoundaries) overlad.
+             * 
+             * Both of these work by using the timing of the results from the selector to determine where window boundaries lie
+             * The difference is that the Func<T> overload re-subscribes to the source every single time.
+             * The latter subscribes once and relies on the source periodically putting out values to signal window boundaries.
+             * 
+             * A relative Timer resets every time it is re-subscribed, so it works with the first overload even though it's the same IObservable every time.
+             * The second one only reacts once since the timer only provides a single value after the time elapses
+             * The second one works when Observable.Interval is used since Interval is the same as timer but repeats every time it expires
+             * 
+             * Unclear what the proper fix is, I need to read the Bonsai documentation more to get an understanding of what the DueTime variant is meant to do.
+             */
+            if (dueTime.HasValue)
+                return source.Gate(interval, dueTime.Value, scheduler);
+            else
+                return source.Gate(interval);
         }
     }
 }
