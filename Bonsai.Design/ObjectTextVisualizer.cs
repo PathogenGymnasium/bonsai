@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using Bonsai;
 using Bonsai.Design;
+using System.Diagnostics;
 using System.Drawing;
 using System.Reactive;
-using System.Text.RegularExpressions;
 using System.Text;
 
 [assembly: TypeVisualizer(typeof(ObjectTextVisualizer), Target = typeof(object))]
@@ -22,7 +22,7 @@ namespace Bonsai.Design
 
         RichTextBox textBox;
         UserControl textPanel;
-        Queue<char[]> buffer;
+        Queue<string> buffer;
         int bufferSize;
 
         /// <inheritdoc/>
@@ -31,51 +31,75 @@ namespace Bonsai.Design
         /// <inheritdoc/>
         protected override void ShowBuffer(IList<Timestamped<object>> values)
         {
-            if (values.Count > 0)
+            if (values.Count == 0)
+                return;
+
+            var sb = new StringBuilder();
+
+            // Add new values to the buffer
+            for (int i = Math.Max(0, values.Count - bufferSize); i < values.Count; i++)
             {
-                base.ShowBuffer(values);
-                var sb = new StringBuilder();
-                foreach (var line in buffer)
+                var rawText = values[i].Value?.ToString() ?? string.Empty;
+                sb.Clear();
+                sb.EnsureCapacity(rawText.Length + rawText.Length / 16); // Arbitrary extra space for control characters
+
+                foreach (char c in rawText)
                 {
-                    if (sb.Length > 0)
-                        sb.Append(Environment.NewLine);
-                    sb.Append(line);
+                    // To give point of reference we represent strings as they'd be represented in C# string literals
+                    var replacement = c switch
+                    {
+                        '\\' => @"\\", // Backslash
+                        '"' => "\\\"", // Double quote
+                        '\n' => @"\n", // Line feed
+                        '\r' => @"\r", // Carriage return
+                        '\x0085' => @"\x0085", // Next line character (NEL)
+                        '\x2028' => @"\x2028", // Unicode line separator
+                        '\x2029' => @"\x2029", // Unicode paragraph separator
+                        '\0' => @"\0", // Null
+                        '\a' => @"\a", // Alert
+                        '\b' => @"\b", // Backspace
+                        '\f' => @"\f", // Form feed
+                        '\t' => @"\t", // Tab
+                        '\v' => @"\v", // Vertical tab
+                        < ' ' => $@"\u{c:X4}", // Misc control characters
+                        _ => null,
+                    };
+
+                    if (replacement is null)
+                        sb.Append(c);
+                    else
+                        sb.Append(replacement);
                 }
-                textBox.Text = sb.ToString();
-                textPanel.Invalidate();
+
+                if (buffer.Count >= bufferSize)
+                    buffer.Dequeue();
+
+                buffer.Enqueue(sb.ToString());
             }
+
+            Debug.Assert(buffer.Count <= bufferSize);
+
+            // Update the visual representation of the buffer
+            sb.Clear();
+            foreach (var line in buffer)
+            {
+                if (sb.Length > 0)
+                    sb.Append(Environment.NewLine);
+                sb.Append(line);
+            }
+            textBox.Text = sb.ToString();
+            textPanel.Invalidate();
         }
 
         /// <inheritdoc/>
         public override void Show(object value)
-        {
-            value ??= string.Empty;
-            var rawText = value.ToString();
-            var text = new char[rawText.Length];
-
-            for (int i = 0; i < text.Length; i++)
-            {
-                text[i] = rawText[i] switch
-                {
-                    '\0' => '␀',
-                    '\n' => '␊',
-                    '\r' => '␍',
-                    //TODO: Other control characters
-                    char c => c,
-                };
-            }
-            
-            buffer.Enqueue(text);
-            while (buffer.Count > bufferSize)
-            {
-                buffer.Dequeue();
-            }
-        }
+            //TODO: This can still be called and must be implemented. Refactor to have a Show(object, Stringbuilder) overload and use that in both
+            => throw new NotImplementedException();
 
         /// <inheritdoc/>
         public override void Load(IServiceProvider provider)
         {
-            buffer = new Queue<char[]>();
+            buffer = new Queue<string>();
             textBox = new RichTextLabel { Dock = DockStyle.Fill };
             textBox.Multiline = true;
             textBox.WordWrap = false;
@@ -127,7 +151,9 @@ namespace Bonsai.Design
         {
             bufferSize = 0;
             textBox.Dispose();
+            textPanel.Dispose();
             textBox = null;
+            textPanel = null;
             buffer = null;
         }
     }
