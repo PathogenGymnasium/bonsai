@@ -78,8 +78,9 @@ namespace Bonsai.Shaders
 
                         if (texture != null)
                         {
-                            var index = Index;
-                            var textureId = index.HasValue ? ((TextureSequence)texture).Textures[index.Value] : texture.Id;
+                            var textureId = Index is int index
+                                ? ((TextureSequence)texture).Textures[index]
+                                : texture.Id;
                             shader.Update(() =>
                             {
                                 GL.ActiveTexture(TextureSlot);
@@ -136,7 +137,10 @@ namespace Bonsai.Shaders
             return Process(source, input =>
             {
                 GL.ActiveTexture(TextureSlot);
-                GL.BindTexture(TextureTarget, input != null ? input.Id : 0);
+                var textureId = Index is int index
+                    ? ((TextureSequence)input).Textures[index]
+                    : input.Id;
+                GL.BindTexture(TextureTarget, textureId);
             });
         }
     }
