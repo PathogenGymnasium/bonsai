@@ -58,35 +58,25 @@ namespace Bonsai.Shaders
             get { return Index.HasValue; }
         }
 
-        IObservable<TSource> Process<TSource>(IObservable<TSource> source, Action<TSource> update)
+        /// <param name="source">The source sequence to be processed</param>
+        /// <param name="getTextureId">Function taking (int? index, Shader shader, TSource input) and producing a texture ID (or null to skip binding)</param>
+        IObservable<TSource> Process<TSource>(IObservable<TSource> source, Func<int?, Shader, TSource, int?> getTextureId)
         {
             return Observable.Defer(() =>
             {
-                var texture = default(Texture);
-                var textureName = default(string);
                 return source.CombineEither(
                     ShaderManager.ReserveShader(ShaderName),
                     (input, shader) =>
                     {
-                        if (textureName != TextureName)
+                        if (getTextureId(Index, shader, input) is int textureId)
                         {
-                            textureName = TextureName;
-                            texture = !string.IsNullOrEmpty(textureName)
-                                ? shader.Window.ResourceManager.Load<Texture>(textureName)
-                                : null;
-                        }
-
-                        if (texture != null)
-                        {
-                            var index = Index;
-                            var textureId = index.HasValue ? ((TextureSequence)texture).Textures[index.Value] : texture.Id;
                             shader.Update(() =>
                             {
                                 GL.ActiveTexture(TextureSlot);
                                 GL.BindTexture(TextureTarget, textureId);
                             });
                         }
-                        else if (update != null) shader.Update(() => update(input));
+
                         return input;
                     });
             });
@@ -110,7 +100,28 @@ namespace Bonsai.Shaders
         /// </returns>
         public IObservable<TSource> Process<TSource>(IObservable<TSource> source)
         {
-            return Process(source, update: null);
+            var texture = default(Texture);
+            var textureName = default(string);
+
+            return Process(source, (maybeIndex, shader, _) =>
+            {
+                if (textureName != TextureName)
+                {
+                    textureName = TextureName;
+                    texture = !string.IsNullOrEmpty(textureName)
+                        ? shader.Window.ResourceManager.Load<Texture>(textureName)
+                        : null;
+                }
+
+                if (texture != null)
+                {
+                    return Index is int index
+                        ? ((TextureSequence)texture).Textures[index]
+                        : texture.Id;
+                }
+
+                return null;
+            });
         }
 
         /// <summary>
@@ -133,10 +144,11 @@ namespace Bonsai.Shaders
         /// </returns>
         public IObservable<Texture> Process(IObservable<Texture> source)
         {
-            return Process(source, input =>
+            return Process(source, (maybeIndex, _, input) =>
             {
-                GL.ActiveTexture(TextureSlot);
-                GL.BindTexture(TextureTarget, input != null ? input.Id : 0);
+                return maybeIndex is int index
+                    ? ((TextureSequence)input).Textures[index]
+                    : input.Id;
             });
         }
     }
