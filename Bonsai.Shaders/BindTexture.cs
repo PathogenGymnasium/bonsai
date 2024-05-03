@@ -136,7 +136,12 @@ namespace Bonsai.Shaders
             return Process(source, input =>
             {
                 GL.ActiveTexture(TextureSlot);
-                GL.BindTexture(TextureTarget, input != null ? input.Id : 0);
+                int textureId;
+                if (Index is int index)
+                    textureId = ((TextureSequence)input).Textures[index];
+                else
+                    textureId = input.Id;
+                GL.BindTexture(TextureTarget, textureId);
             });
         }
     }
