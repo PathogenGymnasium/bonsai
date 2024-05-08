@@ -76,6 +76,8 @@ namespace Bonsai.Shaders
                                 : null;
                         }
 
+                        texture ??= input as Texture;
+
                         if (texture != null)
                         {
                             var textureId = Index is int index
@@ -134,14 +136,7 @@ namespace Bonsai.Shaders
         /// </returns>
         public IObservable<Texture> Process(IObservable<Texture> source)
         {
-            return Process(source, input =>
-            {
-                GL.ActiveTexture(TextureSlot);
-                var textureId = Index is int index
-                    ? ((TextureSequence)input).Textures[index]
-                    : input.Id;
-                GL.BindTexture(TextureTarget, textureId);
-            });
+            return Process(source, null);
         }
     }
 }
