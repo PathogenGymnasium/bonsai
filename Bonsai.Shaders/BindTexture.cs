@@ -58,7 +58,23 @@ namespace Bonsai.Shaders
             get { return Index.HasValue; }
         }
 
-        IObservable<TSource> Process<TSource>(IObservable<TSource> source, Action<TSource> update)
+        /// <summary>
+        /// Binds the specified texture buffer to the specified texture unit for
+        /// each notification in an observable sequence.
+        /// </summary>
+        /// <typeparam name="TSource">
+        /// The type of the elements in the <paramref name="source"/> sequence.
+        /// </typeparam>
+        /// <param name="source">
+        /// The sequence containing the notifications indicating when to bind
+        /// the texture buffer to the specified texture unit.
+        /// </param>
+        /// <returns>
+        /// An observable sequence that is identical to the source sequence but where
+        /// there is an additional side effect of binding the texture buffer to the
+        /// specified texture unit.
+        /// </returns>
+        public IObservable<TSource> Process<TSource>(IObservable<TSource> source)
         {
             return Observable.Defer(() =>
             {
@@ -89,31 +105,10 @@ namespace Bonsai.Shaders
                                 GL.BindTexture(TextureTarget, textureId);
                             });
                         }
-                        else if (update != null) shader.Update(() => update(input));
+
                         return input;
                     });
             });
-        }
-
-        /// <summary>
-        /// Binds the specified texture buffer to the specified texture unit for
-        /// each notification in an observable sequence.
-        /// </summary>
-        /// <typeparam name="TSource">
-        /// The type of the elements in the <paramref name="source"/> sequence.
-        /// </typeparam>
-        /// <param name="source">
-        /// The sequence containing the notifications indicating when to bind
-        /// the texture buffer to the specified texture unit.
-        /// </param>
-        /// <returns>
-        /// An observable sequence that is identical to the source sequence but where
-        /// there is an additional side effect of binding the texture buffer to the
-        /// specified texture unit.
-        /// </returns>
-        public IObservable<TSource> Process<TSource>(IObservable<TSource> source)
-        {
-            return Process(source, update: null);
         }
 
         /// <summary>
@@ -136,7 +131,7 @@ namespace Bonsai.Shaders
         /// </returns>
         public IObservable<Texture> Process(IObservable<Texture> source)
         {
-            return Process(source, null);
+            return Process<Texture>(source);
         }
     }
 }
