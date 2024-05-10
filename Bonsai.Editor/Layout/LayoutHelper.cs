@@ -193,8 +193,11 @@ namespace Bonsai.Design
             if (visualizerMappings.Count == 0) return Array.Empty<VisualizerFactory>();
             return visualizerMappings.Select(mapping =>
             {
-                var nestedSources = GetMashupArguments(mapping.Source, typeVisualizerMap);
+                // mapping.Source == builder if two visualizers in the mashup visualize the same node
+                var nestedSources = mapping.Source == builder ? null : GetMashupArguments(mapping.Source, typeVisualizerMap);
+
                 var visualizerType = mapping.VisualizerType ?? typeVisualizerMap.GetTypeVisualizers(mapping.Source).FirstOrDefault();
+
                 return new VisualizerFactory(mapping.Source, visualizerType, nestedSources);
             }).ToList();
         }
