@@ -188,12 +188,18 @@ namespace Bonsai.Design
         }
 
         static IReadOnlyList<VisualizerFactory> GetMashupArguments(InspectBuilder builder, TypeVisualizerMap typeVisualizerMap)
+            => GetMashupArguments(new HashSet<InspectBuilder>(), builder, typeVisualizerMap);
+
+        static IReadOnlyList<VisualizerFactory> GetMashupArguments(HashSet<InspectBuilder> enumeratedBuilders, InspectBuilder builder, TypeVisualizerMap typeVisualizerMap)
         {
+            if (!enumeratedBuilders.Add(builder))
+                throw new WorkflowBuildException("Visualizer mapping subgraph contains cycles.", builder);
+
             var visualizerMappings = ExpressionBuilder.GetVisualizerMappings(builder);
             if (visualizerMappings.Count == 0) return Array.Empty<VisualizerFactory>();
             return visualizerMappings.Select(mapping =>
             {
-                var nestedSources = GetMashupArguments(mapping.Source, typeVisualizerMap);
+                var nestedSources = GetMashupArguments(enumeratedBuilders, mapping.Source, typeVisualizerMap);
                 var visualizerType = mapping.VisualizerType ?? typeVisualizerMap.GetTypeVisualizers(mapping.Source).FirstOrDefault();
                 return new VisualizerFactory(mapping.Source, visualizerType, nestedSources);
             }).ToList();
