@@ -194,7 +194,13 @@ namespace Bonsai.Design
             return visualizerMappings.Select(mapping =>
             {
                 // mapping.Source == builder if two visualizers in the mashup visualize the same node
-                var nestedSources = mapping.Source == builder ? null : GetMashupArguments(mapping.Source, typeVisualizerMap);
+                var nestedSources = mapping.Source == builder ?
+#if false
+                    null
+#else
+                    throw new WorkflowBuildException("Visualizer mapping subgraph contains cycles.", builder)
+#endif
+                    : GetMashupArguments(mapping.Source, typeVisualizerMap);
 
                 var visualizerType = mapping.VisualizerType ?? typeVisualizerMap.GetTypeVisualizers(mapping.Source).FirstOrDefault();
 
