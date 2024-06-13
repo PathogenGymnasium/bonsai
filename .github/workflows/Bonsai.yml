@@ -1,0 +1,180 @@
+name: Bonsai
+on:
+  push:
+    # This prevents tag pushes from triggering this workflow
+    branches: ['*']
+  pull_request:
+  workflow_dispatch:
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+  ContinuousIntegrationBuild: true
+jobs:
+  # =====================================================================================================================================================================
+  # Determine build matrix
+  # =====================================================================================================================================================================
+  # Some of the build matrix targets are conditional, and `jobs.<job_id>.if` is evaluated before `jobs.<job_id>.strategy.matrix`
+  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idif
+  # As such we build the matrix programmatically in its own job and feed it into `build-and-test`.
+  create-build-matrix:
+    name: Create Build Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{steps.create-matrix.outputs.matrix}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Create Build Matrix
+        id: create-matrix
+        run: python .github/workflows/create-build-matrix.py
+
+  # =====================================================================================================================================================================
+  # Build, test, and package
+  # =====================================================================================================================================================================
+  build-and-test:
+    needs: create-build-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJSON(needs.create-build-matrix.outputs.matrix)}}
+    name: ${{matrix.platform.name}} ${{matrix.configuration}}
+    runs-on: ${{matrix.platform.os}}
+    env:
+      WillCreatePackages: ${{matrix.create-packages}}
+    steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------------------- Setup tools
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # ----------------------------------------------------------------------- Configure build
+      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO: Should put GitHub Package Feed in NuGet.config for CI builds
+   
+      # ----------------------------------------------------------------------- Build
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration ${{matrix.configuration}}
+
+      - name: Pack
+        id: pack
+        if: matrix.create-packages
+        run: dotnet pack --no-build --configuration ${{matrix.configuration}}
+
+      # ----------------------------------------------------------------------- Test
+      - name: Test
+        run: dotnet test --no-restore --no-builds --configuration ${{matrix.configuration}} --verbosity normal
+      
+      # ----------------------------------------------------------------------- Collect Artifacts
+      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #- name: Collect NuGet Packages
+      #  uses: actions/upload-artifact@v4
+      #  # We always want to collect packages when they were produced
+      #  if: steps.pack.outcome == 'success' && always()
+      #  with:
+      #    name: Packages
+      #    if-no-files-found: error
+      #    path: packages/**
+
+  # =====================================================================================================================================================================
+  # Determine which packages need to be published
+  # =====================================================================================================================================================================
+  # TODO 🧶: Don't bother doing this for CI builds? (Could just publish everything since last release)
+  determine-changed-packages:
+    name: Determine which packages changed
+    runs-on: ubuntu-latest
+    # We technically only need the dummy build jobs, but GitHub Actions lacks the ability to depend on specific jobs in a matrix
+    needs: build-and-test
+    if: github.event_name != 'pull_request'
+    steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'current'
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ''
+          path: 'previous'
+
+      # ----------------------------------------------------------------------- Setup tools
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+  # =====================================================================================================================================================================
+  # Publish to GitHub
+  # =====================================================================================================================================================================
+  publish-github:
+    name: Publish to GitHub
+    runs-on: ubuntu-latest
+    needs: [build-and-test, determine-changed-packages]
+    #TODO 🧶: Ensure assetion below is upheld
+    # Pushes always publish CI packages (configure-build.py will add the branch name to the version string for branches besides main)
+    # Published releases always publish packages
+    if: github.event_name == 'push' || github.event_name == 'release'
+    steps:
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      - name: NOT IMPLEMENTED
+        runs: echo "TODO"
+      # ----------------------------------------------------------------------- Upload release assets
+      # ----------------------------------------------------------------------- Push to GitHub Packages
+
+  # =====================================================================================================================================================================
+  # Publish NuGet Packages to NuGet.org
+  # =====================================================================================================================================================================
+  publish-packages-nuget-org:
+    name: Publish to NuGet.org
+    runs-on: ubuntu-latest
+    needs: [build-and-test, determine-changed-packages]
+    environment: NuGet.org
+    # Only release builds publish packages to NuGet.org
+    if: github.event_name == 'release'
+    steps:
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      - name: NOT IMPLEMENTED
+        runs: echo "TODO"
+
+  # =====================================================================================================================================================================
+  # Bump `latest` tag
+  # =====================================================================================================================================================================
+  bump-latest:
+    name: Bump Latest Version Tag
+    runs-on: ubuntu-latest
+    # It's important that this only happens when everything else happened successfully
+    # Otherwise it's possible for a partial release to occur and re-running the job wouldn't be possible due to the latest tag having already moved
+    # (This is also why this happens as its own job, it lets us ensure both publish paths happened successfully.)
+    needs: [publish-github, publish-packages-nuget-org]
+    # Only bump latest tag when doing a full release
+    if: github.event_name == 'release'
+    steps:
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO: DO NOT DO THIS WHEN IT'S A PREVIEW VERSION
+      - name: NOT IMPLEMENTED
+        runs: echo "TODO"
