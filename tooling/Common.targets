@@ -4,7 +4,8 @@
     <_RelativeProjectPathFilePath>$(BaseIntermediateOutputPath)RelativeProjectPath.txt</_RelativeProjectPathFilePath>
     <_ProjectPathRelativeToIntermediateDirectory>$([MSBuild]::MakeRelative($(BaseIntermediateOutputPath), $(MSBuildProjectFullPath)))</_ProjectPathRelativeToIntermediateDirectory>
   </PropertyGroup>
-  <Target Name="VerifyNoIntermediateDirCollisions" BeforeTargets="ResolvePackageAssets;Build">
+  <!-- The condition here ensures that this doesn't run multiple times concurrently and cause a race condition when a project is built for all of its target frameworks -->
+  <Target Name="VerifyNoIntermediateDirCollisions" BeforeTargets="ResolvePackageAssets;Build" Condition="'$(TargetFrameworks)' == '' or $(TargetFrameworks.StartsWith('$(TargetFramework)'))">
     <WriteLinesToFile File="$(_RelativeProjectPathFilePath)" Lines="$(_ProjectPathRelativeToIntermediateDirectory)" Condition="!Exists('$(_RelativeProjectPathFilePath)')" />
     <ReadLinesFromFile File="$(_RelativeProjectPathFilePath)">
       <Output TaskParameter="Lines" ItemName="_ReadProjectPathRelativeToIntermediateDirectory" />
