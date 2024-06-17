@@ -12,9 +12,9 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageLicenseUrl>https://bonsai-rx.org/license</PackageLicenseUrl>
     <PackageIconUrl>https://bonsai-rx.org/assets/images/bonsai.png</PackageIconUrl>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-    <VersionSuffix></VersionSuffix>
+    <!-- Always pack NuGet packages (except on CI where it'll be separately) -->
+    <GeneratePackageOnBuild Condition="'$(ContinuousIntegrationBuild)' != 'true'">true</GeneratePackageOnBuild>
 
     <!-- Emit modern symbol pacakges -->
     <IncludeSymbols>true</IncludeSymbols>

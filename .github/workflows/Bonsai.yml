@@ -61,31 +61,58 @@ jobs:
         with:
           python-version: '3.10'
 
+      # Legacy .NET command line tools are only used for building the installer
+      - name: Setup MSBuild Command Line
+        if: matrix.create-installer
+        uses: microsoft/setup-msbuild@v2
+      - name: Setup NuGet Command Line
+        if: matrix.create-installer
+        uses: NuGet/setup-nuget@v2
+        with:
+          nuget-version: 6.x
+
       # ----------------------------------------------------------------------- Configure build
-      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
       #TODO: Should put GitHub Package Feed in NuGet.config for CI builds
    
       # ----------------------------------------------------------------------- Build
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore Bonsai.sln
 
       - name: Build
-        run: dotnet build --no-restore --configuration ${{matrix.configuration}}
+        run: dotnet build Bonsai.sln --no-restore --configuration ${{matrix.configuration}}
 
       - name: Pack
         id: pack
         if: matrix.create-packages
-        run: dotnet pack --no-build --configuration ${{matrix.configuration}}
+        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}}
 
       # ----------------------------------------------------------------------- Test
       - name: Test
-        run: dotnet test --no-restore --no-builds --configuration ${{matrix.configuration}} --verbosity normal
+        run: dotnet test Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal
+
+      # ----------------------------------------------------------------------- Build Visual Studio Templates
+      - name: Build Visual Studio Templates
+        if: matrix.create-installer
+        run: msbuild Bonsai.Templates\Bonsai.Templates.sln /p:Configuration=Release
+
+      # ----------------------------------------------------------------------- Build Setup
+      - name: Restore Setup
+        if: matrix.create-installer
+        # Restoring the packages.config directly means we don't rely on the system-wide Wix install
+        run: |
+          nuget restore Bonsai.Setup\packages.config -SolutionDir .
+          nuget restore Bonsai.Setup.Bootstrapper\packages.config -SolutionDir .
+
+      - name: Build Setup
+        if: matrix.create-installer
+        run: msbuild Bonsai.Setup.sln /p:Configuration=${{matrix.configuration}}
       
       # ----------------------------------------------------------------------- Collect Artifacts
-      # TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
       #- name: Collect NuGet Packages
       #  uses: actions/upload-artifact@v4
       #  # We always want to collect packages when they were produced
