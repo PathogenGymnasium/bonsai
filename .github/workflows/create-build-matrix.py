@@ -41,9 +41,10 @@ def add_dummy(name: str, artifacts_suffix: str):
     dummy['dummy-build'] = True
     dummy['title'] = name # Don't include configuration in dummy target titles
     dummy['artifacts-suffix'] = artifacts_suffix
+    return dummy
 
 if os.getenv('GITHUB_EVENT_NAME') != 'pull_request':
-    add_dummy('Previous Dummy', '-dummy-prev')
+    add_dummy('Previous Dummy', '-dummy-prev')['checkout-ref'] = 'refs/tags/latest'
     add_dummy('Next Dummy', '-dummy-next')
 
 # Output
