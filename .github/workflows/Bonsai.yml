@@ -106,7 +106,7 @@ jobs:
       # ----------------------------------------------------------------------- Build Visual Studio Templates
       - name: Build Visual Studio Templates
         if: matrix.create-installer
-        run: msbuild /nologo /maxCpuCount /verbosity:minimal Bonsai.Templates/Bonsai.Templates.sln /p:Configuration=${{matrix.configuration}}
+        run: msbuild /nologo /maxCpuCount /verbosity:minimal Bonsai.Templates/Bonsai.Templates.sln /p:Configuration=${{matrix.configuration}} /p:DeployExtension=false
 
       # ----------------------------------------------------------------------- Build Setup
       - name: Restore Setup
