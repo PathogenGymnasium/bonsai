@@ -35,6 +35,6 @@
 
     <!-- This is detached from the rest of the IsReferenceDummyBuild stuff because the non-existent PDB will be
       enumerated by the time it's evaluated and break NuGet packing -->
-    <IncludeSymbols Condition="'$(IsReferenceDummyBuild)' == 'true'">false</IncludeSymbols>
+    <DebugType Condition="'$(IsReferenceDummyBuild)' == 'true'">none</DebugType>
   </PropertyGroup>
 </Project>
