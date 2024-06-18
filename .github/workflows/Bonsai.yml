@@ -1,0 +1,146 @@
+name: Bonsai
+on:
+  push:
+    # This prevents tag pushes from triggering this workflow
+    branches: ['*']
+  pull_request:
+  workflow_dispatch:
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+  ContinuousIntegrationBuild: true
+jobs:
+  # =====================================================================================================================================================================
+  # Determine build matrix
+  # =====================================================================================================================================================================
+  # Some of the build matrix targets are conditional, and `jobs.<job_id>.if` is evaluated before `jobs.<job_id>.strategy.matrix`
+  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idif
+  # As such we build the matrix programmatically in its own job and feed it into `build-and-test`.
+  create-build-matrix:
+    name: Create Build Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{steps.create-matrix.outputs.matrix}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Create Build Matrix
+        id: create-matrix
+        run: python .github/workflows/create-build-matrix.py
+
+  # =====================================================================================================================================================================
+  # Build, test, and package
+  # =====================================================================================================================================================================
+  build-and-test:
+    needs: create-build-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJSON(needs.create-build-matrix.outputs.matrix)}}
+    name: ${{matrix.platform.name}} ${{matrix.configuration}}
+    runs-on: ${{matrix.platform.os}}
+    steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------------------- Setup tools
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # Legacy .NET command line tools are only used for building the installer
+      - name: Setup MSBuild Command Line
+        if: matrix.create-installer
+        uses: microsoft/setup-msbuild@v2
+      - name: Setup NuGet Command Line
+        if: matrix.create-installer
+        uses: NuGet/setup-nuget@v2
+        with:
+          nuget-version: 6.x
+
+      # ----------------------------------------------------------------------- Configure build
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
+      #TODO: Should put GitHub Package Feed in NuGet.config for CI builds
+   
+      # ----------------------------------------------------------------------- Build
+      - name: Restore
+        run: dotnet restore Bonsai.sln
+
+      - name: Build
+        run: dotnet build Bonsai.sln --no-restore --configuration ${{matrix.configuration}}
+
+      - name: Pack
+        id: pack
+        if: matrix.create-packages #TODO: Should we just pack every platform since it's important to Bonsai?
+        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}}
+
+      # ----------------------------------------------------------------------- Test
+      - name: Test
+        run: dotnet test Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal
+
+      # ----------------------------------------------------------------------- Repack Bootstrapper
+      - name: Repack Bootstrapper
+        run: dotnet build Bonsai/Bonsai --no-restore --configuration ${{matrix.configuration}} -t:Repack
+
+      # ----------------------------------------------------------------------- Create zip file distribution
+      - name: Create Zip File Distribution
+        id: create-zip-distribution
+        if: matrix.create-installer
+        run: python .github/workflows/create-zip-distribution.py artifacts/Bonsai.zip ${{matrix.configuration}}
+
+      # ----------------------------------------------------------------------- Build Visual Studio Templates
+      - name: Build Visual Studio Templates
+        if: matrix.create-installer
+        run: msbuild Bonsai.Templates\Bonsai.Templates.sln /p:Configuration=${{matrix.configuration}}
+
+      # ----------------------------------------------------------------------- Build Setup
+      - name: Restore Setup
+        if: matrix.create-installer
+        # Restoring the packages.config directly means we don't rely on the system-wide Wix install
+        run: |
+          nuget restore Bonsai.Setup\packages.config -SolutionDir .
+          nuget restore Bonsai.Setup.Bootstrapper\packages.config -SolutionDir .
+
+      - name: Build Setup
+        id: create-installer
+        if: matrix.create-installer
+        run: msbuild Bonsai.Setup.sln /p:Configuration=${{matrix.configuration}}
+      
+      # ----------------------------------------------------------------------- Collect Artifacts
+      - name: Collect NuGet Packages
+        uses: actions/upload-artifact@v4
+        if: steps.pack.outcome == 'success' && always()
+        with:
+          name: Packages${{matrix.artifacts-suffix}}
+          if-no-files-found: error
+          path: artifacts/package/**
+
+      - name: Collect Zip File Distribution
+        uses: actions/upload-artifact@v4
+        if: steps.create-zip-distribution.outcome == 'success' && always()
+        with:
+          name: ZipDistribution${{matrix.artifacts-suffix}}
+          if-no-files-found: error
+          path: artifacts/Bonsai.zip
+
+      - name: Collect Installer
+        uses: actions/upload-artifact@v4
+        if: steps.create-installer.outcome == 'success' && always()
+        with:
+          name: Installer${{matrix.artifacts-suffix}}
+          if-no-files-found: error
+          path: artifacts/bin/Bonsai.Setup.Bootstrapper/**
