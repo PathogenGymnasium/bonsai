@@ -142,7 +142,7 @@ for file in os.listdir(next_packages_path):
 
     if not nuget_packages_are_equivalent(next_packages_path / file, previous_packages_path / file):
         verbose_log(f"'{file}' differs")
-        different_packages.append(file)
+        different_packages.append(package_name)
 
 previous_packages = set()
 for file in os.listdir(previous_packages_path):
@@ -160,7 +160,7 @@ if len(different_packages) == 0:
 else:
     print("The following packages have changes:")
     for package in different_packages:
-        print(f"  {get_package_name(package)}")
+        print(f"  {package}")
 
 # Ensure the next dummy reference and release package sets contain the same packages
 def list_missing_peers(heading: str, packages: set[str]) -> bool:
