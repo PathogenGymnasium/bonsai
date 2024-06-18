@@ -51,3 +51,5 @@ with zipfile.ZipFile(output_path, 'x', zipfile.ZIP_DEFLATED, compresslevel=9) as
     nuget_config.append('')
 
     output.writestr('NuGet.config', '\r\n'.join(nuget_config))
+
+gha.fail_if_errors()

@@ -36,6 +36,7 @@ jobs:
   # =====================================================================================================================================================================
   # Build, test, and package
   # =====================================================================================================================================================================
+  #TODO: Dummy build needs to actually do dummy build things 🧶🧶🧶🧶🧶
   build-and-test:
     needs: create-build-matrix
     strategy:
@@ -43,6 +44,9 @@ jobs:
       matrix: ${{fromJSON(needs.create-build-matrix.outputs.matrix)}}
     name: ${{matrix.platform.name}} ${{matrix.configuration}}
     runs-on: ${{matrix.platform.os}}
+    env:
+      #TODO: Move to build configuration script
+      IsReferenceDummyBuild: ${{matrix.dummy-build}}
     steps:
       # ----------------------------------------------------------------------- Checkout
       - name: Checkout
@@ -78,15 +82,15 @@ jobs:
    
       # ----------------------------------------------------------------------- Build
       - name: Restore
-        run: dotnet restore Bonsai.sln --verbosity normal
+        run: dotnet restore Bonsai.sln
 
       - name: Build
-        run: dotnet build Bonsai.sln --no-restore --configuration ${{matrix.configuration}} --verbosity normal
+        run: dotnet build Bonsai.sln --no-restore --configuration ${{matrix.configuration}}
 
       - name: Pack
         id: pack
         if: matrix.create-packages #TODO: Should we just pack every platform since it's important to Bonsai?
-        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal
+        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}}
 
       # ----------------------------------------------------------------------- Test
       - name: Test
@@ -95,7 +99,7 @@ jobs:
       # ----------------------------------------------------------------------- Repack bootstrapper
       - name: Repack bootstrapper
         if: matrix.create-installer
-        run: dotnet build Bonsai --no-restore --configuration ${{matrix.configuration}} -t:Repack --verbosity normal
+        run: dotnet build Bonsai --no-restore --configuration ${{matrix.configuration}} -t:Repack
 
       # ----------------------------------------------------------------------- Create zip file distribution
       - name: Create zip file distribution
@@ -174,8 +178,16 @@ jobs:
           pattern: Packages*
           path: artifacts
 
+      #TODO: REMOVE ME
       - name: LIST TEMP
         run: ls -R artifacts
+
+      # ----------------------------------------------------------------------- Compare packages
+      - name: Compare packages
+        run: python .github/workflows/compare-nuget-packages.py artifacts/Packages-dummy-prev/ artifacts/Packages-dummy-next/ artifacts/Packages/
+
+      # ----------------------------------------------------------------------- Upload release manifest
+      #TODO
 
   # =====================================================================================================================================================================
   # Publish to GitHub

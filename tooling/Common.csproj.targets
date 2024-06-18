@@ -3,4 +3,16 @@
     <DaysFromFirstRevision>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::Parse(2011/12/12))).Days)</DaysFromFirstRevision>
     <FileVersion>$(VersionPrefix).$(DaysFromFirstRevision)</FileVersion>
   </PropertyGroup>
+
+  <!--
+    🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶
+    TODO: Write a blurb about how this works and why it matters
+    🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶
+  -->
+  <PropertyGroup Condition="'$(IsReferenceDummyBuild)' == 'true'">
+    <SourceRevisionId>0000000000000000000000000000000000000000</SourceRevisionId>
+    <IncludeSymbols>false</IncludeSymbols>
+    <DebugType>none</DebugType>
+    <Version>99.99.99</Version>
+  </PropertyGroup>
 </Project>
