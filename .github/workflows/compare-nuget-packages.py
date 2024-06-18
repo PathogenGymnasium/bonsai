@@ -31,7 +31,7 @@ if not release_packages_path.exists():
 gha.fail_if_errors()
 
 def verbose_log(message: str):
-    print(message)
+    gha.print_debug(message)
 
 def should_ignore(file: ZipInfo) -> bool:
     # Ignore metadata files which change on every pack
