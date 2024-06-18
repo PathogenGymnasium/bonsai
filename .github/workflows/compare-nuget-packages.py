@@ -31,7 +31,7 @@ if not release_packages_path.exists():
 gha.fail_if_errors()
 
 def verbose_log(message: str):
-    gha.print_notice(message)
+    print(message)
 
 def should_ignore(file: ZipInfo) -> bool:
     # Ignore metadata files which change on every pack
@@ -119,27 +119,46 @@ def nuget_packages_are_equivalent(a_path: Path, b_path: Path, is_snupkg: bool = 
 
     return is_equvalent
 
+package_file_name_regex = re.compile(r"^(?P<package_name>.+?)\.(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?\.nupkg$")
+def get_package_name(file_name: str) -> str:
+    match = package_file_name_regex.match(file)
+    gha.print_warning(f"File name '{file_name}' does not match the expected format for a NuGet package.")
+    return file_name if match is None else match.group('package_name')
+
 different_packages = []
+next_packages = set()
 for file in os.listdir(next_packages_path):
     if not file.endswith(".nupkg"):
         continue
+
+    package_name = get_package_name(file)
+    next_packages.add(package_name)
 
     if not nuget_packages_are_equivalent(next_packages_path / file, previous_packages_path / file):
         verbose_log(f"'{file}' differs")
         different_packages.append(file)
 
-    if not (release_packages_path / file).exists():
-        gha.print_error(f"'{file}' exists in the next dummy reference artifact, but not in the release package artifact.")
-
+release_packages = set()
 for file in os.listdir(release_packages_path):
-    if not (next_packages_path / file).exists():
-        gha.print_error(f"'{file}' exists in the release package artifact, but not in the next dummy reference artifact.")
+    if file.endswith(".nupkg"):
+        release_packages.add(get_package_name(file))
 
 print()
 print("The following packages have changes:")
-package_file_name_regex = re.compile(r"^(?P<package_name>.+?)\.(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?\.nupkg$")
-for file in different_packages:
-    match = package_file_name_regex.match(file)
-    print(f"  {file if match is None else match.group('package_name')}")
+for package in different_packages:
+    print(f"  {package}")
+
+# Ensure the next dummy reference and release package sets contain the same packages
+def list_missing_peers(error_message: str, packages: set[str]):
+    if len(packages) == 0:
+        return
+    
+    print()
+    gha.print_error(error_message)
+    for package in packages:
+        gha.print_error(f"  {package}")
+
+list_missing_peers("The following packages exist in the release package artifact, but not in the next dummy reference artifact:", release_packages - next_packages)
+list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", next_packages - release_packages)
 
 gha.fail_if_errors()
