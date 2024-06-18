@@ -10,7 +10,7 @@ if len(sys.argv) != 3:
     sys.exit(1)
 else:
     output_path = sys.argv[1]
-    configuration = sys.argv[2]
+    configuration = sys.argv[2].lower()
 
 with zipfile.ZipFile(output_path, 'x', zipfile.ZIP_DEFLATED, compresslevel=9) as output:
     output.mkdir('Extensions')
