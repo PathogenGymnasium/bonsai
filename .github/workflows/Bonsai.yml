@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Create Build Matrix
+      - name: Create build matrix
         id: create-matrix
         run: python .github/workflows/create-build-matrix.py
 
@@ -60,10 +60,10 @@ jobs:
           python-version: '3.11'
 
       # Legacy .NET command line tools are only used for building the installer
-      - name: Setup MSBuild Command Line
+      - name: Setup MSBuild command line
         if: matrix.create-installer
         uses: microsoft/setup-msbuild@v2
-      - name: Setup NuGet Command Line
+      - name: Setup NuGet command line
         if: matrix.create-installer
         uses: NuGet/setup-nuget@v2
         with:
@@ -78,38 +78,38 @@ jobs:
    
       # ----------------------------------------------------------------------- Build
       - name: Restore
-        run: dotnet restore Bonsai.sln
+        run: dotnet restore Bonsai.sln --verbosity normal
 
       - name: Build
-        run: dotnet build Bonsai.sln --no-restore --configuration ${{matrix.configuration}}
+        run: dotnet build Bonsai.sln --no-restore --configuration ${{matrix.configuration}} --verbosity normal
 
       - name: Pack
         id: pack
         if: matrix.create-packages #TODO: Should we just pack every platform since it's important to Bonsai?
-        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}}
+        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal
 
       # ----------------------------------------------------------------------- Test
       - name: Test
         run: dotnet test Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal
 
-      # ----------------------------------------------------------------------- Repack Bootstrapper
-      - name: Repack Bootstrapper
+      # ----------------------------------------------------------------------- Repack bootstrapper
+      - name: Repack bootstrapper
         if: matrix.create-installer
-        run: dotnet build Bonsai --no-restore --configuration ${{matrix.configuration}} -t:Repack
+        run: dotnet build Bonsai --no-restore --configuration ${{matrix.configuration}} -t:Repack --verbosity normal
 
       # ----------------------------------------------------------------------- Create zip file distribution
-      - name: Create Zip File Distribution
+      - name: Create zip file distribution
         id: create-zip-distribution
         if: matrix.create-installer
         run: python .github/workflows/create-zip-distribution.py artifacts/Bonsai.zip ${{matrix.configuration}}
 
-      # ----------------------------------------------------------------------- Build Visual Studio Templates
-      - name: Build Visual Studio Templates
+      # ----------------------------------------------------------------------- Build Visual Studio templates
+      - name: Build Visual Studio templates
         if: matrix.create-installer
-        run: msbuild /nologo /maxCpuCount /verbosity:minimal Bonsai.Templates/Bonsai.Templates.sln /p:Configuration=${{matrix.configuration}} /p:DeployExtension=false
+        run: msbuild /nologo /maxCpuCount Bonsai.Templates/Bonsai.Templates.sln /p:Configuration=${{matrix.configuration}} /p:DeployExtension=false
 
-      # ----------------------------------------------------------------------- Build Setup
-      - name: Restore Setup
+      # ----------------------------------------------------------------------- Build setup
+      - name: Restore setup
         if: matrix.create-installer
         # Restoring the packages.config directly means we don't rely on the system-wide Wix install
         run: |
@@ -119,10 +119,10 @@ jobs:
       - name: Build Setup
         id: create-installer
         if: matrix.create-installer
-        run: msbuild /nologo /maxCpuCount /verbosity:minimal Bonsai.Setup.sln /p:Configuration=${{matrix.configuration}}
+        run: msbuild /nologo /maxCpuCount Bonsai.Setup.sln /p:Configuration=${{matrix.configuration}}
       
-      # ----------------------------------------------------------------------- Collect Artifacts
-      - name: Collect NuGet Packages
+      # ----------------------------------------------------------------------- Collect artifacts
+      - name: Collect NuGet packages
         uses: actions/upload-artifact@v4
         if: steps.pack.outcome == 'success' && always()
         with:
@@ -130,34 +130,21 @@ jobs:
           if-no-files-found: error
           path: artifacts/package/${{matrix.configuration-lower}}/**
 
-      - name: Collect Zip File Distribution
+      - name: Collect zip file distribution
         uses: actions/upload-artifact@v4
         if: steps.create-zip-distribution.outcome == 'success' && always()
         with:
-          name: ZipDistribution${{matrix.artifacts-suffix}}
+          name: BonsaiZip${{matrix.artifacts-suffix}}
           if-no-files-found: error
           path: artifacts/Bonsai.zip
 
-      - name: Collect Installer
+      - name: Collect installer
         uses: actions/upload-artifact@v4
         if: steps.create-installer.outcome == 'success' && always()
         with:
           name: Installer${{matrix.artifacts-suffix}}
           if-no-files-found: error
           path: artifacts/bin/Bonsai.Setup.Bootstrapper/${{matrix.configuration-lower}}-x86/**
-
-      # This makes a zip which can be directly downloaded from the GitHub Actions UI, it is not used by other jobs
-      - name: Create User-Friendly Zip Artifact
-        id: create-zip-friendly
-        if: steps.create-zip-distribution.outcome == 'success' && always()
-        run: 7z x artifacts/Bonsai.zip -oartifacts/Bonsai-dist/
-      - name: Collect User-Friendly Zip Artifact
-        uses: actions/upload-artifact@v4
-        if: steps.create-zip-friendly.outcome == 'success' && always()
-        with:
-          name: Bonsai
-          if-no-files-found: error
-          path: artifacts/Bonsai-dist/**
 
   # =====================================================================================================================================================================
   # Determine which packages need to be published
@@ -179,10 +166,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      - name: NOT IMPLEMENTED
-        run: echo "TODO"
+
+      # ----------------------------------------------------------------------- Download packages for comparison
+      - name: Download packages for comparison
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Packages*
+          path: artifacts
+
+      - name: LIST TEMP
+        run: ls -R artifacts
 
   # =====================================================================================================================================================================
   # Publish to GitHub
@@ -234,3 +227,4 @@ jobs:
       #TODO: DO NOT DO THIS WHEN IT'S A PREVIEW VERSION
       - name: NOT IMPLEMENTED
         run: echo "TODO"
+      #TODO: Dispatch update to docs repo
