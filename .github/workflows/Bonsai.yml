@@ -161,67 +161,11 @@ jobs:
         uses: actions/checkout@v4
 
       # ----------------------------------------------------------------------- Setup tools
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.x
-
       - name: Setup Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       
       #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      - name: NOT IMPLEMENTED
-        runs: echo "TODO"
-
-  # =====================================================================================================================================================================
-  # Publish to GitHub
-  # =====================================================================================================================================================================
-  publish-github:
-    name: Publish to GitHub
-    runs-on: ubuntu-latest
-    needs: [build-and-test, determine-changed-packages]
-    #TODO 🧶: Ensure assetion below is upheld
-    # Pushes always publish CI packages (configure-build.py will add the branch name to the version string for branches besides main)
-    # Published releases always publish packages
-    if: github.event_name == 'push' || github.event_name == 'release'
-    steps:
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      - name: NOT IMPLEMENTED
-        runs: echo "TODO"
-      # ----------------------------------------------------------------------- Upload release assets
-      # ----------------------------------------------------------------------- Push to GitHub Packages
-
-  # =====================================================================================================================================================================
-  # Publish NuGet Packages to NuGet.org
-  # =====================================================================================================================================================================
-  publish-packages-nuget-org:
-    name: Publish to NuGet.org
-    runs-on: ubuntu-latest
-    needs: [build-and-test, determine-changed-packages]
-    environment: NuGet.org
-    # Only release builds publish packages to NuGet.org
-    if: github.event_name == 'release'
-    steps:
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      - name: NOT IMPLEMENTED
-        runs: echo "TODO"
-
-  # =====================================================================================================================================================================
-  # Bump `latest` tag
-  # =====================================================================================================================================================================
-  bump-latest:
-    name: Bump Latest Version Tag
-    runs-on: ubuntu-latest
-    # It's important that this only happens when everything else happened successfully
-    # Otherwise it's possible for a partial release to occur and re-running the job wouldn't be possible due to the latest tag having already moved
-    # (This is also why this happens as its own job, it lets us ensure both publish paths happened successfully.)
-    needs: [publish-github, publish-packages-nuget-org]
-    # Only bump latest tag when doing a full release
-    if: github.event_name == 'release'
-    steps:
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      #TODO: DO NOT DO THIS WHEN IT'S A PREVIEW VERSION
       - name: NOT IMPLEMENTED
         runs: echo "TODO"
