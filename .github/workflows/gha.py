@@ -7,18 +7,22 @@ errors_were_printed = False
 
 def fail_if_errors():
     if errors_were_printed:
+        sys.stdout.flush()
         print("Exiting due to previous errors.", file=sys.stderr)
         sys.exit(1)
 
 def print_error(message):
     global errors_were_printed
     errors_were_printed = True
+    sys.stdout.flush()
     print(f"::error::{message}", file=sys.stderr)
 
 def print_warning(message):
+    sys.stdout.flush()
     print(f"::warning::{message}", file=sys.stderr)
 
 def print_notice(message):
+    sys.stdout.flush()
     print(f"::notice::{message}", file=sys.stderr)
 
 def github_file_command(command, message):
