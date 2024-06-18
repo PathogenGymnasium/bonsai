@@ -20,7 +20,7 @@
 
     <!-- Emit modern symbol pacakges -->
     <IncludeSymbols>true</IncludeSymbols>
-    <IncludeSymbols Condition="'$(Configuration)'!='Release'">false</IncludeSymbols>
+    <IncludeSymbols Condition="'$(Configuration)' != 'Release'">false</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
     <!-- Ignore warnings about PackageLicenseUrl and PackageIconUrl, we still use them for MyGet support -->
