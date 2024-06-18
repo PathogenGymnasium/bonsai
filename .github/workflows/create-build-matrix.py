@@ -45,7 +45,7 @@ def add_dummy(name: str, artifacts_suffix: str):
 
 if os.getenv('GITHUB_EVENT_NAME') != 'pull_request':
     add_dummy('Previous Dummy', '-dummy-prev')['checkout-ref'] = 'refs/tags/latest'
-    add_dummy('Next Dummy', '-dummy-next')['checkout-ref'] = 'refs/heads/release-automation-compatibility-2.8.3' #TODO: 🧶🧶🧶🧶🧶 TEMPORARY FOR TESTING
+    add_dummy('Next Dummy', '-dummy-next')
 
 # Output
 matrix_json = json.dumps({ "include": matrix }, indent=2)
