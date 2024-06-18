@@ -11,7 +11,6 @@
   -->
   <PropertyGroup Condition="'$(IsReferenceDummyBuild)' == 'true'">
     <SourceRevisionId>0000000000000000000000000000000000000000</SourceRevisionId>
-    <IncludeSymbols>false</IncludeSymbols>
     <DebugType>none</DebugType>
     <Version>99.99.99</Version>
   </PropertyGroup>

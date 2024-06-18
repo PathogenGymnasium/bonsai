@@ -32,5 +32,9 @@
 
     <!-- Opt in to modern resource embedding (required for building from .NET SDK) -->
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+
+    <!-- This is detached from the rest of the IsReferenceDummyBuild stuff because the non-existent PDB will be
+      enumerated by the time it's evaluated and break NuGet packing -->
+    <IncludeSymbols Condition="'$(IsReferenceDummyBuild)' == 'true'">false</IncludeSymbols>
   </PropertyGroup>
 </Project>
