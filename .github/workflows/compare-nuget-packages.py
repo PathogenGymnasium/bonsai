@@ -155,9 +155,12 @@ for file in os.listdir(release_packages_path):
         release_packages.add(get_package_name(file))
 
 print()
-print("The following packages have changes:")
-for package in different_packages:
-    print(f"  {package}")
+if len(different_packages) == 0:
+    print("There are no packages with any changes.")
+else:
+    print("The following packages have changes:")
+    for package in different_packages:
+        print(f"  {get_package_name(package)}")
 
 # Ensure the next dummy reference and release package sets contain the same packages
 def list_missing_peers(heading: str, packages: set[str]) -> bool:

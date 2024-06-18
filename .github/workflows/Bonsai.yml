@@ -183,10 +183,6 @@ jobs:
           pattern: Packages*
           path: artifacts
 
-      #TODO: REMOVE ME
-      - name: LIST TEMP
-        run: ls -R artifacts
-
       # ----------------------------------------------------------------------- Compare packages
       - name: Compare packages
         run: python .github/workflows/compare-nuget-packages.py artifacts/Packages-dummy-prev/ artifacts/Packages-dummy-next/ artifacts/Packages/
