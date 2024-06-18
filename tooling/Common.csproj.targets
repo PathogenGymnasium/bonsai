@@ -13,5 +13,6 @@
     <SourceRevisionId>0000000000000000000000000000000000000000</SourceRevisionId>
     <IncludeSymbols>false</IncludeSymbols>
     <Version>99.99.99</Version>
+    <PackageVersion>99.99.99</PackageVersion>
   </PropertyGroup>
 </Project>

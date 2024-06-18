@@ -1,3 +1,7 @@
+# =======================================================================================================================================================================
+# Bonsai CI Infrastructure
+# =======================================================================================================================================================================
+# When updating this workflow, be mindful that the `latest` tag of must successfully build under this workflow too in order to determine which packages have changed.
 name: Bonsai
 on:
   push:

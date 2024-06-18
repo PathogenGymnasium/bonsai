@@ -133,12 +133,21 @@ for file in os.listdir(next_packages_path):
     if not file.endswith(".nupkg"):
         continue
 
+    # We don't tolerate build metadata here because the nuget_packages_are_equivalent call doesn't either
+    if not file.endswith(".99.99.99.nupkg"):
+        gha.print_error(f"Package '{file}' does not have a dummy version.")
+
     package_name = get_package_name(file)
     next_packages.add(package_name)
 
     if not nuget_packages_are_equivalent(next_packages_path / file, previous_packages_path / file):
         verbose_log(f"'{file}' differs")
         different_packages.append(file)
+
+previous_packages = set()
+for file in os.listdir(previous_packages_path):
+    if file.endswith(".nupkg"):
+        previous_packages.add(get_package_name(file))
 
 release_packages = set()
 for file in os.listdir(release_packages_path):
@@ -151,16 +160,20 @@ for package in different_packages:
     print(f"  {package}")
 
 # Ensure the next dummy reference and release package sets contain the same packages
-def list_missing_peers(error_message: str, packages: set[str]):
+def list_missing_peers(message: str, packages: set[str], is_error: bool):
     if len(packages) == 0:
         return
     
     print()
-    gha.print_error(error_message)
+    print_func = gha.print_error if is_error else print
+    print_func(message)
     for package in packages:
-        gha.print_error(f"  {package}")
+        print_func(f"  {package}")
 
-list_missing_peers("The following packages exist in the release package artifact, but not in the next dummy reference artifact:", release_packages - next_packages)
-list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", next_packages - release_packages)
+list_missing_peers("The following packages are new for this release:", next_packages - previous_packages, False)
+list_missing_peers("The following packages were removed during this release:", previous_packages - next_packages, False)
+
+list_missing_peers("The following packages exist in the release package artifact, but not in the next dummy reference artifact:", release_packages - next_packages, True)
+list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", next_packages - release_packages, True)
 
 gha.fail_if_errors()
