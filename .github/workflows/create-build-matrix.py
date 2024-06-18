@@ -18,6 +18,7 @@ def add(name: str, runner_os: str, rid: str, configurations: list[str] = ['Debug
         job = {
             'platform': platform.copy(),
             'configuration': configuration,
+            'configuration-lower': configuration.lower(),
             'job-title': f"{name} {configuration}",
             'artifacts-suffix': '',
         }

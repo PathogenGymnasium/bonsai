@@ -128,7 +128,7 @@ jobs:
         with:
           name: Packages${{matrix.artifacts-suffix}}
           if-no-files-found: error
-          path: artifacts/package/**
+          path: artifacts/package/${{matrix.configuration-lower}}/**
 
       - name: Collect Zip File Distribution
         uses: actions/upload-artifact@v4
@@ -144,7 +144,20 @@ jobs:
         with:
           name: Installer${{matrix.artifacts-suffix}}
           if-no-files-found: error
-          path: artifacts/bin/Bonsai.Setup.Bootstrapper/**
+          path: artifacts/bin/Bonsai.Setup.Bootstrapper/${{matrix.configuration-lower}}-x86/**
+
+      # This makes a zip which can be directly downloaded from the GitHub Actions UI, it is not used by other jobs
+      - name: Create User-Friendly Zip Artifact
+        id: create-zip-friendly
+        if: steps.create-zip-distribution.outcome == 'success' && always()
+        run: 7z x artifacts/Bonsai.zip -oartifacts/Bonsai-dist/
+      - name: Collect User-Friendly Zip Artifact
+        uses: actions/upload-artifact@v4
+        if: steps.create-zip-friendly.outcome == 'success' && always()
+        with:
+          name: Bonsai
+          if-no-files-found: error
+          path: artifacts/Bonsai-dist/**
 
   # =====================================================================================================================================================================
   # Determine which packages need to be published
