@@ -106,7 +106,7 @@ jobs:
       # ----------------------------------------------------------------------- Build Visual Studio Templates
       - name: Build Visual Studio Templates
         if: matrix.create-installer
-        run: msbuild /maxCpuCount /verbosity:minmal Bonsai.Templates/Bonsai.Templates.sln /p:Configuration=${{matrix.configuration}}
+        run: msbuild /nologo /maxCpuCount /verbosity:minimal Bonsai.Templates/Bonsai.Templates.sln /p:Configuration=${{matrix.configuration}}
 
       # ----------------------------------------------------------------------- Build Setup
       - name: Restore Setup
@@ -119,7 +119,7 @@ jobs:
       - name: Build Setup
         id: create-installer
         if: matrix.create-installer
-        run: msbuild /maxCpuCount /verbosity:minmal Bonsai.Setup.sln /p:Configuration=${{matrix.configuration}}
+        run: msbuild /nologo /maxCpuCount /verbosity:minimal Bonsai.Setup.sln /p:Configuration=${{matrix.configuration}}
       
       # ----------------------------------------------------------------------- Collect Artifacts
       - name: Collect NuGet Packages
