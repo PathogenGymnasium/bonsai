@@ -160,20 +160,22 @@ for package in different_packages:
     print(f"  {package}")
 
 # Ensure the next dummy reference and release package sets contain the same packages
-def list_missing_peers(message: str, packages: set[str], is_error: bool):
+def list_missing_peers(heading: str, packages: set[str]) -> bool:
     if len(packages) == 0:
-        return
+        return False
     
     print()
-    print_func = gha.print_error if is_error else print
-    print_func(message)
+    print(heading)
     for package in packages:
-        print_func(f"  {package}")
+        print(f"  {package}")
+    return True
 
-list_missing_peers("The following packages are new for this release:", next_packages - previous_packages, False)
-list_missing_peers("The following packages were removed during this release:", previous_packages - next_packages, False)
+list_missing_peers("The following packages are new for this release:", next_packages - previous_packages)
+list_missing_peers("The following packages were removed during this release:", previous_packages - next_packages)
 
-list_missing_peers("The following packages exist in the release package artifact, but not in the next dummy reference artifact:", release_packages - next_packages, True)
-list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", next_packages - release_packages, True)
+if list_missing_peers("The following packages exist in the release package artifact, but not in the next dummy reference artifact:", release_packages - next_packages):
+    gha.print_error("Some packages exist in the release package artifact, but not in the next dummy reference artifact.")
+if list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", next_packages - release_packages):
+    gha.print_error("Some packages exist in the next dummy reference artifact, but not in the release package artifact.")
 
 gha.fail_if_errors()
