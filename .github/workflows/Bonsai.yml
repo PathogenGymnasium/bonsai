@@ -90,7 +90,7 @@ jobs:
       - name: Pack
         id: pack
         if: matrix.create-packages #TODO: Should we just pack every platform since it's important to Bonsai?
-        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}}
+        run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}} -bl
 
       # ----------------------------------------------------------------------- Test
       - name: Test
@@ -149,6 +149,13 @@ jobs:
           name: Installer${{matrix.artifacts-suffix}}
           if-no-files-found: error
           path: artifacts/bin/Bonsai.Setup.Bootstrapper/${{matrix.configuration-lower}}-x86/**
+      
+      - name: Upload binlog
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Binlog${{matrix.artifacts-suffix}}
+          path: msbuild.binlog
 
   # =====================================================================================================================================================================
   # Determine which packages need to be published
