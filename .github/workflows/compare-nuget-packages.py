@@ -14,7 +14,7 @@ import gha
 # changed were external to the package, so we don't check them.
 CHECK_SYMBOL_PACKAGES = False
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 5:
     gha.print_error('Usage: compare-nuget-packages.py <previous-dummy-packages-path> <next-dummy-packages-path> <release-packages-path> <release-manifest-path>')
     sys.exit(1)
 else:
