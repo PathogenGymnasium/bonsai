@@ -186,6 +186,7 @@ if list_missing_peers("The following packages exist in the next dummy reference 
     gha.print_error("Some packages exist in the next dummy reference artifact, but not in the release package artifact.")
 
 with open(release_manifest_path, 'x') as manifest:
-    manifest.writelines(different_packages)
+    for package in different_packages:
+        manifest.write(f"{package}\n")
 
 gha.fail_if_errors()
