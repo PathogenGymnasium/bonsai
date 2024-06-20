@@ -15,12 +15,13 @@ import gha
 CHECK_SYMBOL_PACKAGES = False
 
 if len(sys.argv) != 4:
-    gha.print_error('Usage: compare-nuget-packages.py <previous-dummy-packages-path> <next-dummy-packages-path> <release-packages-path>')
+    gha.print_error('Usage: compare-nuget-packages.py <previous-dummy-packages-path> <next-dummy-packages-path> <release-packages-path> <release-manifest-path>')
     sys.exit(1)
 else:
     previous_packages_path = Path(sys.argv[1])
     next_packages_path = Path(sys.argv[2])
     release_packages_path = Path(sys.argv[3])
+    release_manifest_path = Path(sys.argv[4])
 
 if not previous_packages_path.exists():
     gha.print_error(f"Previous packages path '{previous_packages_path}' doest not exist.")
@@ -28,6 +29,8 @@ if not next_packages_path.exists():
     gha.print_error(f"Next packages path '{next_packages_path}' doest not exist.")
 if not release_packages_path.exists():
     gha.print_error(f"Release packages path '{previous_packages_path}' doest not exist.")
+if release_manifest_path.exists():
+    gha.print_error(f"Release manifest '{release_manifest_path}' already exists.")
 gha.fail_if_errors()
 
 def verbose_log(message: str):
@@ -155,6 +158,7 @@ for file in os.listdir(release_packages_path):
         release_packages.add(get_package_name(file))
 
 print()
+different_packages.sort()
 if len(different_packages) == 0:
     print("There are no packages with any changes.")
 else:
@@ -180,5 +184,8 @@ if list_missing_peers("The following packages exist in the release package artif
     gha.print_error("Some packages exist in the release package artifact, but not in the next dummy reference artifact.")
 if list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", next_packages - release_packages):
     gha.print_error("Some packages exist in the next dummy reference artifact, but not in the release package artifact.")
+
+with open(release_manifest_path, 'x') as manifest:
+    manifest.writelines(different_packages)
 
 gha.fail_if_errors()

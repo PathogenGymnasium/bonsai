@@ -44,7 +44,7 @@ def add_dummy(name: str, artifacts_suffix: str):
     return dummy
 
 if os.getenv('GITHUB_EVENT_NAME') != 'pull_request':
-    add_dummy('Previous Dummy', '-dummy-prev')['checkout-ref'] = 'refs/heads/release-automation-compatibility-2.8.3' #TODO: 🧶🧶🧶🧶🧶 = 'refs/tags/latest'
+    add_dummy('Previous Dummy', '-dummy-prev')['checkout-ref'] = 'refs/tags/latest'
     add_dummy('Next Dummy', '-dummy-next')
 
 # Output
