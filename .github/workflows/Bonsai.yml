@@ -247,7 +247,7 @@ jobs:
           name: ReleaseManifest
 
       - name: TEMP-LS
-        runs: ls -laR
+        run: ls -laR
 
       # ----------------------------------------------------------------------- Upload release assets
       # ----------------------------------------------------------------------- Push to GitHub Packages
