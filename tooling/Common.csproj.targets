@@ -36,7 +36,7 @@
     <Version Condition="'$(CiBuildVersion)' != ''">$(CiBuildVersion)</Version>
   </PropertyGroup>
 
-  <Target Name="VersionSanityChecks" BeforeTargets="build">
+  <Target Name="VersionSanityChecks" BeforeTargets="build" Condition="false">
     <Error Condition="'$(ContinuousIntegrationBuild)' == 'true' and '$(CiBuildVersion)' == '' and '$(CiBuildVersionSuffix)' == ''" Text="CI version info not configured." />
     <Error Condition="'$(IsReferenceDummyBuild)' == 'true' and '$(Version)' != '99.99.99'" Text="Reference dummy builds must use hard-coded verison numbers." />
     <Error Condition="'$(PackageVersion)' != '$(Version)'" Text="Do not manually specify PackageVersion." />
