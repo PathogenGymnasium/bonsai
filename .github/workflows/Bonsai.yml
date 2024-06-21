@@ -265,7 +265,7 @@ jobs:
 
       # ----------------------------------------------------------------------- Filter NuGet packages
       - name: Filter NuGet packages
-        run: python .github/filter-release-packages.py ReleaseManifest Packages
+        run: python .github/workflows/filter-release-packages.py ReleaseManifest Packages
 
       - name: TEMP-LS
         run: ls -la Packages
