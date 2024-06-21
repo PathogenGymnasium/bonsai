@@ -31,7 +31,7 @@ linux = add('Linux x64', 'ubuntu-latest', 'linux-x64')
 
 # Create packages and installer from Windows Release x64
 windows['Release']['create-packages'] = True
-#windows['Release']['create-installer'] = True #TODO: 🧶🧶🧶
+windows['Release']['create-installer'] = True
 
 # Build dummy packages to determine which ones changed (not relevant for pull requests since we won't publish)
 def add_dummy(name: str, artifacts_suffix: str):
