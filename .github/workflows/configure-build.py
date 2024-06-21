@@ -4,6 +4,7 @@ import re
 import sys
 
 import gha
+import nuget
 
 #==================================================================================================
 # Get inputs
@@ -79,7 +80,7 @@ if version.startswith('v'):
     version = version[1:]
 
 # Validate the version number
-if version != '' and not re.match(r'^\d+\.\d+\.\d+(-[0-9a-zA-Z.-]+)?$', version):
+if version != '' and not nuget.is_valid_version(version, forbid_build_metadata=True):
     gha.print_error(f"'{version}' is not a valid semver version!")
 
 # If there are any errors at this point, make sure we exit with an error code
@@ -92,5 +93,7 @@ print(f"Configuring build environment to build{' and release' if is_for_release 
 gha.set_environment_variable('CiBuildVersion', version)
 gha.set_environment_variable('CiBuildVersionSuffix', version_suffix)
 gha.set_environment_variable('CiIsForRelease', str(is_for_release).lower())
+
+gha.set_output('is-preview-version', version == '' or nuget.is_preview_version(version))
 
 gha.fail_if_errors()

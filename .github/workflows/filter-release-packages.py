@@ -39,5 +39,5 @@ for file_name in file_names:
         continue
     
     if extension != '.snupkg':
-        print(f"🛑 '{package_name}'")
+        print(f"⬜ '{package_name}'")
     os.unlink(packages_path / file_name)

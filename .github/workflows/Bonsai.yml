@@ -88,6 +88,7 @@ jobs:
 
       # ----------------------------------------------------------------------- Configure build
       - name: Configure build
+        id: build-configuration
         run: python .github/workflows/configure-build.py
         env:
           github_event_name: ${{github.event_name}}
@@ -214,6 +215,11 @@ jobs:
   publish-github:
     name: Publish to GitHub
     runs-on: ubuntu-latest
+    permissions:
+      # Needed to attach files to releases
+      contents: write
+      # Needed to upload to GitHub Packages
+      packages: write
     needs: [build-and-test, determine-changed-packages]
     # Pushes always publish CI packages (configure-build.py will add the branch name to the version string for branches besides main)
     # Published releases always publish packages
@@ -286,35 +292,126 @@ jobs:
   publish-packages-nuget-org:
     name: Publish to NuGet.org
     runs-on: ubuntu-latest
+    environment: PublicRelease
     needs: [build-and-test, determine-changed-packages]
-    environment: NuGet.org
     # Release builds always publish packages to NuGet.org
     # Workflow dispatch builds will only publish packages if enabled and an explicit version number is given
     if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.will_publish_packages == 'true' && github.event.inputs.version != '')
     steps:
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      - name: NOT IMPLEMENTED
-        run: echo "TODO"
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+
+      # ----------------------------------------------------------------------- Setup tools
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ----------------------------------------------------------------------- Download artifacts
+      - name: Download built packages
+        uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: Packages
+
+      - name: Download release manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: ReleaseManifest
+
+      # ----------------------------------------------------------------------- Filter NuGet packages
+      - name: Filter NuGet packages
+        run: python .github/workflows/filter-release-packages.py ReleaseManifest Packages
+
+      # ----------------------------------------------------------------------- Push to NuGet.org
+      - name: Push to NuGet.org
+        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_API_KEY}} --source ${{vars.NUGET_API_URL}}
+        env:
+          # This is a workaround for https://github.com/NuGet/Home/issues/9775
+          DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: 0
 
   # =====================================================================================================================================================================
-  # Bump `latest` tag
+  # Finish up release
   # =====================================================================================================================================================================
-  bump-latest:
-    name: Bump Latest Version Tag
+  finish-up-release:
+    name: Finish up release
     runs-on: ubuntu-latest
+    environment: PublicRelease
+    permissions:
+      # Needed to bump tags and version numbers
+      contents: write
+      # Needed to close milestones
+      issues: write
     # It's important that this only happens when everything else happened successfully
     # Otherwise it's possible for a partial release to occur and re-running the job wouldn't be possible due to the latest tag having already moved
     # (This is also why this happens as its own job, it lets us ensure both publish paths happened successfully.)
-    needs: [publish-github, publish-packages-nuget-org]
-    # Only bump latest tag when doing a full release
-    if: github.event_name == 'release'
+    needs: [build-and-test, publish-github, publish-packages-nuget-org]
+    # Only bump latest tag when doing a full release of a non-preview version
+    if: github.event_name == 'release' && !needs.build-and-test.build-configuration.outputs.is-preview-version
     steps:
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      #TODO: DO NOT DO THIS WHEN IT'S A PREVIEW VERSION
-      - name: NOT IMPLEMENTED
-        run: echo "TODO"
-      #TODO: Dispatch update to docs repo
-      #TODO: Bump version number in local props file?
-      #TODO: git push --force origin c6e5ecc7d2133c3fabf7e03253969bcad0379fe7:refs/tags/latest
-      #TODO: Maybe make it an annotated tag instead? GitHub will show the tag's annotation rather than the associate commit message
-      #      Slightly more tedious to update though
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------------------- Dispatch docs repo update
+      - name: Update version and submodule in ${{vars.DOCS_REPO}}
+        run: gh workflow run --repo "$DOCS_REPO" version-bump.yml --raw-field "project=$PROJECT" --raw-field "version=$VERSION" --raw-field "project-fork-url=$PROJECT_FORK_URL"
+        env:
+          GH_TOKEN: ${{secrets.DOCS_UPDATE_GH_TOKEN}}
+          DOCS_REPO: ${{vars.DOCS_REPO}}
+          PROJECT: bonsai
+          VERSION: ${{github.event.release.tag_name}}
+          PROJECT_FORK_URL: ${{github.repositoryUrl}}
+
+      # ----------------------------------------------------------------------- Update `latest` tag
+      - name: Update `latest` tag
+        run: git push --force origin ${{github.sha}}:refs/tags/latest
+
+      # ----------------------------------------------------------------------- Bump version number
+      #TODO 🧶
+
+      # ----------------------------------------------------------------------- Close milestone
+      - name: Close milestone
+        uses: actions/github-script@v7
+        continue-on-error: true
+        env:
+          MILESTONE_NAME: ${{github.event.release.tag_name}}
+        with:
+          user-agent: actions/github-script for ${{github.repository}}
+          script: |
+            const milestoneToClose = process.env.MILESTONE_NAME;
+
+            response = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            milestones = response.data;
+
+            for (let milestone of milestones) {
+              if (milestone.title != milestoneToClose) {
+                continue;
+              }
+
+              core.info(`Closing milestone '${milestoneToClose}' #${milestone.number}...`);
+              await github.rest.issues.updateMilestone({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                milestone_number: milestone.number,
+                state: 'closed',
+              });
+
+              return;
+            }
+
+            core.warning(`Could not find any milestone associated with '${milestoneToClose}', the milestone for this release will not be closed.`);
