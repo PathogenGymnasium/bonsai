@@ -231,23 +231,32 @@ jobs:
           name: Packages
           path: Packages
 
-      - name: Download portable zip
-        uses: actions/download-artifact@v4
-        with:
-          name: PortableZip
-
-      - name: Download installer
-        uses: actions/download-artifact@v4
-        with:
-          name: Installer
-
       - name: Download release manifest
         uses: actions/download-artifact@v4
         with:
           name: ReleaseManifest
 
+      - name: Download portable zip
+        uses: actions/download-artifact@v4
+        if: github.event_name == 'release'
+        with:
+          name: PortableZip
+
+      - name: Download installer
+        uses: actions/download-artifact@v4
+        if: github.event_name == 'release'
+        with:
+          name: Installer
+
       - name: TEMP-LS
         run: ls -laR
+
+      # ----------------------------------------------------------------------- Filter NuGet packages
+      - name: Filter NuGet packages
+        run: python .github/filter-release-packages.py ReleaseManifest Packages
+
+      - name: TEMP-LS
+        run: ls -la Packages
 
       # ----------------------------------------------------------------------- Upload release assets
       # ----------------------------------------------------------------------- Push to GitHub Packages

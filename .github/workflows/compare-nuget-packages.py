@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import hashlib
 import os
-import re
 import sys
 
 from pathlib import Path
 from zipfile import ZipFile, ZipInfo
 
 import gha
+import nuget
 
 # Symbol packages will change even for changes that we don't care about because the deterministic hash embedded in the PDB
 # is affected by the MVID of a package's dependencies. We don't want to release a new package when the only things that
@@ -122,14 +122,6 @@ def nuget_packages_are_equivalent(a_path: Path, b_path: Path, is_snupkg: bool = 
 
     return is_equvalent
 
-package_file_name_regex = re.compile(r"^(?P<package_name>.+?)\.(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?\.nupkg$")
-def get_package_name(file_name: str) -> str:
-    match = package_file_name_regex.match(file)
-    if match is None:
-        gha.print_warning(f"File name '{file_name}' does not match the expected format for a NuGet package.")
-        return file_name
-    return match.group('package_name')
-
 different_packages = []
 next_packages = set()
 for file in os.listdir(next_packages_path):
@@ -140,7 +132,7 @@ for file in os.listdir(next_packages_path):
     if not file.endswith(".99.99.99.nupkg"):
         gha.print_error(f"Package '{file}' does not have a dummy version.")
 
-    package_name = get_package_name(file)
+    package_name = nuget.get_package_name(file)
     next_packages.add(package_name)
 
     if not nuget_packages_are_equivalent(next_packages_path / file, previous_packages_path / file):
@@ -150,12 +142,12 @@ for file in os.listdir(next_packages_path):
 previous_packages = set()
 for file in os.listdir(previous_packages_path):
     if file.endswith(".nupkg"):
-        previous_packages.add(get_package_name(file))
+        previous_packages.add(nuget.get_package_name(file))
 
 release_packages = set()
 for file in os.listdir(release_packages_path):
     if file.endswith(".nupkg"):
-        release_packages.add(get_package_name(file))
+        release_packages.add(nuget.get_package_name(file))
 
 print()
 different_packages.sort()
