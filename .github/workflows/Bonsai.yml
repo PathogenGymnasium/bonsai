@@ -88,13 +88,13 @@ jobs:
 
       # ----------------------------------------------------------------------- Configure build
       - name: Configure build
-        id: build-configuration
         run: python .github/workflows/configure-build.py
         env:
           github_event_name: ${{github.event_name}}
           github_ref: ${{github.ref}}
           github_run_number: ${{github.run_number}}
           release_version: ${{github.event.release.tag_name}}
+          release_is_prerelease: ${{github.event.release.prerelease}}
           workflow_dispatch_version: ${{github.event.inputs.version}}
           workflow_dispatch_will_publish_packages: ${{github.event.inputs.will_publish_packages}}
    
@@ -339,13 +339,24 @@ jobs:
           # This is a workaround for https://github.com/NuGet/Home/issues/9775
           DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: 0
 
+      # ----------------------------------------------------------------------- Dispatch docs repo update
+      # This might seem like an odd spot to do this, but we need access to the PublicRelease environment for our secrets and using it in two jobs means two approvals are needed
+      - name: Update version and submodule in ${{vars.DOCS_REPO}}
+        if: github.event_name == 'release' && github.event.release.prerelease == false
+        run: gh workflow run --repo "$DOCS_REPO" version-bump.yml --raw-field "project=$PROJECT" --raw-field "version=$VERSION" --raw-field "project-fork-url=$PROJECT_FORK_URL"
+        env:
+          GH_TOKEN: ${{secrets.DOCS_UPDATE_GH_TOKEN}}
+          DOCS_REPO: ${{vars.DOCS_REPO}}
+          PROJECT: bonsai
+          VERSION: ${{github.event.release.tag_name}}
+          PROJECT_FORK_URL: https://${{github.server_url}}/${{github.repository}}.git
+
   # =====================================================================================================================================================================
   # Finish up release
   # =====================================================================================================================================================================
   finish-up-release:
     name: Finish up release
     runs-on: ubuntu-latest
-    environment: PublicRelease
     permissions:
       # Needed to bump tags and version numbers
       contents: write
@@ -354,30 +365,24 @@ jobs:
     # It's important that this only happens when everything else happened successfully
     # Otherwise it's possible for a partial release to occur and re-running the job wouldn't be possible due to the latest tag having already moved
     # (This is also why this happens as its own job, it lets us ensure both publish paths happened successfully.)
-    needs: [build-and-test, publish-github, publish-packages-nuget-org]
-    # Only bump latest tag when doing a full release of a non-preview version
-    if: github.event_name == 'release' && !needs.build-and-test.build-configuration.outputs.is-preview-version
+    needs: [publish-github, publish-packages-nuget-org]
+    # Only do finishing tasks when we're explicitly releasing
+    if: github.event_name == 'release'
     steps:
       # ----------------------------------------------------------------------- Checkout
       - name: Checkout
+        if: github.event.release.prerelease == false
         uses: actions/checkout@v4
-
-      # ----------------------------------------------------------------------- Dispatch docs repo update
-      - name: Update version and submodule in ${{vars.DOCS_REPO}}
-        run: gh workflow run --repo "$DOCS_REPO" version-bump.yml --raw-field "project=$PROJECT" --raw-field "version=$VERSION" --raw-field "project-fork-url=$PROJECT_FORK_URL"
-        env:
-          GH_TOKEN: ${{secrets.DOCS_UPDATE_GH_TOKEN}}
-          DOCS_REPO: ${{vars.DOCS_REPO}}
-          PROJECT: bonsai
-          VERSION: ${{github.event.release.tag_name}}
-          PROJECT_FORK_URL: ${{github.repositoryUrl}}
 
       # ----------------------------------------------------------------------- Update `latest` tag
       - name: Update `latest` tag
+        if: github.event.release.prerelease == false
         run: git push --force origin ${{github.sha}}:refs/tags/latest
 
       # ----------------------------------------------------------------------- Bump version number
-      #TODO 🧶
+      - name: Bump verison number
+        if: github.event.release.prerelease == false
+        run: echo TODO🧶🧶🧶
 
       # ----------------------------------------------------------------------- Close milestone
       - name: Close milestone
