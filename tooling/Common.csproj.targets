@@ -31,7 +31,7 @@
     <DevVersion Condition="'$(DevVersion)' == ''">0</DevVersion>
     <Version>$(BonsaiVersion)-dev$(DevVersion)</Version>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
+  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true' and '$(IsReferenceDummyBuild)' != 'true'">
     <Version>$(BonsaiVersion)$(CiBuildVersionSuffix)</Version>
     <Version Condition="'$(CiBuildVersion)' != ''">$(CiBuildVersion)</Version>
   </PropertyGroup>
