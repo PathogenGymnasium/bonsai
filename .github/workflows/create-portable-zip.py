@@ -6,7 +6,7 @@ import zipfile
 import gha
 
 if len(sys.argv) != 3:
-    gha.print_error('Usage: create-zip-distribution.py <output_path> <release|debug>')
+    gha.print_error('Usage: create-portable-zip.py <output_path> <release|debug>')
     sys.exit(1)
 else:
     output_path = sys.argv[1]

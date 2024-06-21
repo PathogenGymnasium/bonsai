@@ -116,11 +116,11 @@ jobs:
         if: matrix.create-installer
         run: dotnet build Bonsai --no-restore --configuration ${{matrix.configuration}} -t:Repack
 
-      # ----------------------------------------------------------------------- Create zip file distribution
-      - name: Create zip file distribution
-        id: create-zip-distribution
+      # ----------------------------------------------------------------------- Create portable zip
+      - name: Create portable zip
+        id: create-portable-zip
         if: matrix.create-installer
-        run: python .github/workflows/create-zip-distribution.py artifacts/Bonsai.zip ${{matrix.configuration}}
+        run: python .github/workflows/create-portable-zip.py artifacts/Bonsai.zip ${{matrix.configuration}}
 
       # ----------------------------------------------------------------------- Build Visual Studio templates
       - name: Build Visual Studio templates
@@ -149,11 +149,11 @@ jobs:
           if-no-files-found: error
           path: artifacts/package/${{matrix.configuration-lower}}/**
 
-      - name: Collect zip file distribution
+      - name: Collect portable zip
         uses: actions/upload-artifact@v4
-        if: steps.create-zip-distribution.outcome == 'success' && always()
+        if: steps.create-portable-zip.outcome == 'success' && always()
         with:
-          name: BonsaiZip${{matrix.artifacts-suffix}}
+          name: PortableZip${{matrix.artifacts-suffix}}
           if-no-files-found: error
           path: artifacts/Bonsai.zip
 
@@ -220,29 +220,29 @@ jobs:
     steps:
       # ----------------------------------------------------------------------- Setup tools
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 8.x
 
       # ----------------------------------------------------------------------- Download artifacts
       - name: Download built packages
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: Packages
           path: Packages
 
-      - name: Download zip file distribution
-        uses: actions/download-artifact@v2
+      - name: Download portable zip
+        uses: actions/download-artifact@v4
         with:
-          name: BonsaiZip
+          name: PortableZip
 
       - name: Download installer
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: Installer
 
       - name: Download release manifest
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ReleaseManifest
 

@@ -1,8 +1,15 @@
 <Project>
-  <!-- 🧶🧶🧶TODO: Decide the fate of this -->
-  <PropertyGroup Condition="false">
-    <DaysFromFirstRevision>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::Parse(2011/12/12))).Days)</DaysFromFirstRevision>
-    <FileVersion>$(VersionPrefix).$(DaysFromFirstRevision)</FileVersion>
+  <PropertyGroup>
+    <!-- 🧶🧶🧶TODO: Decide how this will be bumped -->
+    <BonsaiVersion>2.9.0</BonsaiVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
+    <DevVersion Condition="'$(DevVersion)' == ''">0</DevVersion>
+    <Version>$(BonsaiVersion)-dev$(DevVersion)</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
+    <Version>$(BonsaiVersion)$(CiBuildVersionSuffix)</Version>
+    <Version Condition="'$(CiBuildVersion)' != ''">$(CiBuildVersion)</Version>
   </PropertyGroup>
 
   <!--
@@ -21,19 +28,6 @@
     <Version>99.99.99</Version>
     <SourceRevisionId>0000000000000000000000000000000000000000</SourceRevisionId>
     <IncludeSymbols>false</IncludeSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <!-- 🧶🧶🧶TODO: Decide how this will be bumped -->
-    <BonsaiVersion>2.9.0</BonsaiVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
-    <DevVersion Condition="'$(DevVersion)' == ''">0</DevVersion>
-    <Version>$(BonsaiVersion)-dev$(DevVersion)</Version>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true' and '$(IsReferenceDummyBuild)' != 'true'">
-    <Version>$(BonsaiVersion)$(CiBuildVersionSuffix)</Version>
-    <Version Condition="'$(CiBuildVersion)' != ''">$(CiBuildVersion)</Version>
   </PropertyGroup>
 
   <Target Name="VersionSanityChecks" BeforeTargets="build" Condition="false">
