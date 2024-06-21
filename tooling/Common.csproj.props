@@ -13,8 +13,6 @@
     <PackageLicenseUrl>https://bonsai-rx.org/license</PackageLicenseUrl>
     <PackageIconUrl>https://bonsai-rx.org/assets/images/bonsai.png</PackageIconUrl>
 
-    <VersionSuffix></VersionSuffix>
-
     <!-- Always pack NuGet packages (except on CI where it'll be done separately) -->
     <GeneratePackageOnBuild Condition="'$(ContinuousIntegrationBuild)' != 'true'">true</GeneratePackageOnBuild>
 
