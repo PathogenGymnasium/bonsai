@@ -9,6 +9,12 @@ on:
     branches: ['*']
   pull_request:
   workflow_dispatch:
+      version:
+        description: "Version"
+        default: ""
+      will_publish_packages:
+        description: "Publish packages?"
+        default: "false"
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -79,11 +85,15 @@ jobs:
           nuget-version: 6.x
 
       # ----------------------------------------------------------------------- Configure build
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      #TODO: Should put GitHub Package Feed in NuGet.config for CI builds
+      - name: Configure build
+        run: python .github/workflows/configure-build.py
+        env:
+          github_event_name: ${{github.event_name}}
+          github_ref: ${{github.ref}}
+          github_run_number: ${{github.run_number}}
+          release_version: ${{github.event.release.tag_name}}
+          workflow_dispatch_version: ${{github.event.inputs.version}}
+          workflow_dispatch_will_publish_packages: ${{github.event.inputs.will_publish_packages}}
    
       # ----------------------------------------------------------------------- Build
       - name: Restore
@@ -203,14 +213,42 @@ jobs:
     name: Publish to GitHub
     runs-on: ubuntu-latest
     needs: [build-and-test, determine-changed-packages]
-    #TODO 🧶: Ensure assetion below is upheld
     # Pushes always publish CI packages (configure-build.py will add the branch name to the version string for branches besides main)
     # Published releases always publish packages
-    if: github.event_name == 'push' || github.event_name == 'release'
+    # A manual workflow only publishes packages if explicitly enabled
+    if: github.event_name == 'push' || github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.will_publish_packages == 'true')
     steps:
-      #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
-      - name: NOT IMPLEMENTED
-        run: echo "TODO"
+      # ----------------------------------------------------------------------- Setup tools
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      # ----------------------------------------------------------------------- Download artifacts
+      - name: Download built packages
+        uses: actions/download-artifact@v2
+        with:
+          name: Packages
+          path: Packages
+
+      - name: Download zip file distribution
+        uses: actions/download-artifact@v2
+        with:
+          name: BonsaiZip
+
+      - name: Download installer
+        uses: actions/download-artifact@v2
+        with:
+          name: Installer
+
+      - name: Download release manifest
+        uses: actions/download-artifact@v2
+        with:
+          name: ReleaseManifest
+
+      - name: TEMP-LS
+        runs: ls -laR
+
       # ----------------------------------------------------------------------- Upload release assets
       # ----------------------------------------------------------------------- Push to GitHub Packages
 
@@ -222,8 +260,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-and-test, determine-changed-packages]
     environment: NuGet.org
-    # Only release builds publish packages to NuGet.org
-    if: github.event_name == 'release'
+    # Release builds always publish packages to NuGet.org
+    # Workflow dispatch builds will only publish packages if enabled and an explicit version number is given
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.will_publish_packages == 'true' && github.event.inputs.version != '')
     steps:
       #TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO 🧶 TODO
       - name: NOT IMPLEMENTED
@@ -247,3 +286,7 @@ jobs:
       - name: NOT IMPLEMENTED
         run: echo "TODO"
       #TODO: Dispatch update to docs repo
+      #TODO: Bump version number in local props file?
+      #TODO: git push --force origin c6e5ecc7d2133c3fabf7e03253969bcad0379fe7:refs/tags/latest
+      #TODO: Maybe make it an annotated tag instead? GitHub will show the tag's annotation rather than the associate commit message
+      #      Slightly more tedious to update though
