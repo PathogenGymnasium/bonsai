@@ -334,7 +334,7 @@ jobs:
 
       # ----------------------------------------------------------------------- Push to NuGet.org
       - name: Push to NuGet.org
-        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_API_KEY}} --source ${{vars.NUGET_API_URL}}
+        run: dotnet nuget push "Packages/*.nupkg" --api-key ${{secrets.NUGET_API_KEY}} --source ${{vars.NUGET_API_URL}}
         env:
           # This is a workaround for https://github.com/NuGet/Home/issues/9775
           DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: 0
