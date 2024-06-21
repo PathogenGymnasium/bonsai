@@ -169,7 +169,7 @@ jobs:
   # Determine which packages need to be published
   # =====================================================================================================================================================================
   determine-changed-packages:
-    name: Determine which packages changed
+    name: Detect changed packages
     runs-on: ubuntu-latest
     # We technically only need the dummy build jobs, but GitHub Actions lacks the ability to depend on specific jobs in a matrix
     needs: build-and-test
@@ -218,11 +218,23 @@ jobs:
     # A manual workflow only publishes packages if explicitly enabled
     if: github.event_name == 'push' || github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.will_publish_packages == 'true')
     steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+
       # ----------------------------------------------------------------------- Setup tools
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.x
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       # ----------------------------------------------------------------------- Download artifacts
       - name: Download built packages
