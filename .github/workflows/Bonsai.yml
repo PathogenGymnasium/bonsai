@@ -8,6 +8,8 @@ on:
     # This prevents tag pushes from triggering this workflow
     branches: ['*']
   pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
       version:
         description: "Version"
@@ -260,18 +262,23 @@ jobs:
         with:
           name: Installer
 
-      - name: TEMP-LS
-        run: ls -laR
-
       # ----------------------------------------------------------------------- Filter NuGet packages
       - name: Filter NuGet packages
         run: python .github/workflows/filter-release-packages.py ReleaseManifest Packages
 
-      - name: TEMP-LS
-        run: ls -la Packages
-
       # ----------------------------------------------------------------------- Upload release assets
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        run: gh release upload ${{github.event.release.tag_name}} Bonsai.zip Bonsai-*.exe
+        env:
+          GH_TOKEN: ${{github.token}}
+
       # ----------------------------------------------------------------------- Push to GitHub Packages
+      - name: Push to GitHub Packages
+        run: dotnet nuget push "Packages/*.nupkg" --skip-duplicate --no-symbols --api-key ${{secrets.GITHUB_TOKEN}} --source https://nuget.pkg.github.com/${{github.repository_owner}}
+        env:
+          # This is a workaround for https://github.com/NuGet/Home/issues/9775
+          DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: 0
 
   # =====================================================================================================================================================================
   # Publish NuGet Packages to NuGet.org

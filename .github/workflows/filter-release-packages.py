@@ -25,7 +25,9 @@ with open(release_manifest_path, 'r') as release_manifest:
     for line in release_manifest.readlines():
         release_packages.add(line.strip())
 
-for file_name in os.listdir(packages_path):
+file_names = os.listdir(packages_path)
+file_names.sort()
+for file_name in file_names:
     extension = Path(file_name).suffix.lower()
     if extension != '.nupkg' and extension != '.snupkg':
         continue
@@ -33,9 +35,9 @@ for file_name in os.listdir(packages_path):
     package_name = nuget.get_package_name(file_name)
     if package_name in release_packages:
         if extension != '.snupkg':
-            print(f"'{package_name}' will be released")
+            print(f"✅ '{package_name}'")
         continue
     
     if extension != '.snupkg':
-        print(f"'{package_name}' will be filtered from this release")
+        print(f"🛑 '{package_name}'")
     os.unlink(packages_path / file_name)
