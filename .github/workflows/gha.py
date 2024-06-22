@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # GitHub Actions Utility Functions
 # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions
 import os
