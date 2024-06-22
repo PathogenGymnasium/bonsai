@@ -383,12 +383,12 @@ jobs:
       # We can't bump the version number unless the release happened at `main`
       - name: Get the revision of `main`
         id: main_revision
-        run: python gha.py set_output sha `git rev-parse refs/heads/main`
+        run: python .github/workflows/gha.py set_output sha `git rev-parse refs/heads/main`
 
       # ----------------------------------------------------------------------- Bump version number
       - name: Warn if it doesn't match the release
         if: steps.main_revision.sha != github.sha
-        run: python gha.py print_warning "The `main` branch is at ${{steps.main_revision.sha}} but the release was made from ${{github.sha}}, the version number will not be automatically bumped."
+        run: python .github/workflows/gha.py print_warning "The `main` branch is at ${{steps.main_revision.sha}} but the release was made from ${{github.sha}}, the version number will not be automatically bumped."
 
       # ----------------------------------------------------------------------- Bump version number
       - name: Bump version number
