@@ -275,7 +275,7 @@ jobs:
       # ----------------------------------------------------------------------- Upload release assets
       - name: Upload release assets
         if: github.event_name == 'release'
-        run: gh release upload ${{github.event.release.tag_name}} Bonsai.zip Bonsai-*.exe
+        run: gh release upload ${{github.event.release.tag_name}} Bonsai.zip Bonsai-*.exe --clobber
         env:
           GH_TOKEN: ${{github.token}}
 
@@ -379,20 +379,20 @@ jobs:
       - name: Update `latest` tag
         run: git push --force origin ${{github.sha}}:refs/tags/latest
 
-      # ----------------------------------------------------------------------- Get the revision of `main`
-      # We can't bump the version number unless the release happened at `main`
-      - name: Get the revision of `main`
-        id: main_revision
+      # ----------------------------------------------------------------------- Get the revision of the main branch
+      # We can't easily bump the version number unless the release happened at main
+      - name: Get the revision of the main branch
+        id: main-revision
         run: python .github/workflows/gha.py set_output sha `git rev-parse refs/heads/main`
 
       # ----------------------------------------------------------------------- Bump version number
       - name: Warn if it doesn't match the release
-        if: steps.main_revision.sha != github.sha
-        run: python .github/workflows/gha.py print_warning "The `main` branch is at ${{steps.main_revision.sha}} but the release was made from ${{github.sha}}, the version number will not be automatically bumped."
+        if: steps.main-revision.outputs.sha != github.sha
+        run: python .github/workflows/gha.py print_warning "The main branch is at ${{steps.main-revision.outputs.sha}} but the release was made from ${{github.sha}}, the version number will not be automatically bumped."
 
       # ----------------------------------------------------------------------- Bump version number
       - name: Bump version number
-        if: steps.main_revision.sha == github.sha
+        if: steps.main-revision.outputs.sha == github.sha
         run: |
           python .github/workflows/bump-version.py
           git add $version_file_path
@@ -402,14 +402,14 @@ jobs:
       
       # ----------------------------------------------------------------------- Commit and push changes
       - name: Commit changes
-        if: steps.main_revision.sha == github.sha
+        if: steps.main-revision.outputs.sha == github.sha
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "Bump to version \`$NEXT_VERSION\`" --allow-empty
 
       - name: Push changes
-        if: steps.main_revision.sha == github.sha
+        if: steps.main-revision.outputs.sha == github.sha
         run: git push
 
       # ----------------------------------------------------------------------- Close milestone
