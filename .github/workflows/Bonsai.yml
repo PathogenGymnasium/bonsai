@@ -349,7 +349,7 @@ jobs:
           DOCS_REPO: ${{vars.DOCS_REPO}}
           PROJECT: bonsai
           VERSION: ${{github.event.release.tag_name}}
-          PROJECT_FORK_URL: https://${{github.server_url}}/${{github.repository}}.git
+          PROJECT_FORK_URL: ${{github.server_url}}/${{github.repository}}.git
 
   # =====================================================================================================================================================================
   # Finish up release
