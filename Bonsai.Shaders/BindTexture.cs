@@ -14,6 +14,8 @@ namespace Bonsai.Shaders
     [Description("Binds a texture buffer to the specified texture unit for each texture or notification in the sequence.")]
     public class BindTexture
     {
+        // This is a meaningless change :D
+
         /// <summary>
         /// Gets or sets a value specifying the slot on which to bind the texture.
         /// </summary>
