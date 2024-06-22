@@ -66,6 +66,9 @@ if github_event_name == 'release':
         gha.print_error('Release version was not specified!')
         sys.exit(1)
 
+    # Trim leading v off of version if present
+    version = version.strip('v')
+
     release_is_prerelease = get_environment_variable('release_is_prerelease')
     if release_is_prerelease != 'true' and release_is_prerelease != 'false':
         gha.print_error('Release prerelease status was invalid or unspecified!')
@@ -84,10 +87,6 @@ elif github_event_name == 'workflow_dispatch':
 
     if workflow_dispatch_will_publish_packages.lower() == 'true':
         is_for_release = True
-
-# Trim leading v off of version if present
-if version.startswith('v'):
-    version = version[1:]
 
 # Validate the version number
 if version != '' and not nuget.is_valid_version(version, forbid_build_metadata=True):

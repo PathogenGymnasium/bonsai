@@ -1,8 +1,6 @@
 <Project>
-  <PropertyGroup>
-    <!-- 🧶🧶🧶TODO: Decide how this will be bumped -->
-    <BonsaiVersion>2.9.0</BonsaiVersion>
-  </PropertyGroup>
+  <Import Project="CurrentVersion.props" />
+
   <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
     <DevVersion Condition="'$(DevVersion)' == ''">0</DevVersion>
     <Version>$(BonsaiVersion)-dev$(DevVersion)</Version>

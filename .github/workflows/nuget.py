@@ -29,3 +29,34 @@ def is_preview_version(version: str) -> bool:
         return True
     
     return match.group('prerelease') is not None
+
+class SemverVersion:
+    major = 0
+    minor = 0
+    patch = 0
+    prerelease: str | None = None
+    build_metadata: str | None = None
+
+    def __str__(self):
+        ret = f"{self.major}.{self.minor}.{self.patch}"
+
+        if self.prerelease is not None:
+            ret += f"-{self.prerelease}"
+
+        if self.build_metadata is not None:
+            ret += f"+{self.build_metadata}"
+
+        return ret
+
+def get_version_parts(version: str) -> SemverVersion:
+    match = package_version_regex.match(version)
+    if match is None:
+        raise Exception("The specified version was invalid")
+
+    ret = SemverVersion()
+    ret.major = int(match.group('major'))
+    ret.minor = int(match.group('minor'))
+    ret.patch = int(match.group('patch'))
+    ret.prerelease = match.group('prerelease')
+    ret.build_metadata = match.group('buildmetadata')
+    return ret
