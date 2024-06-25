@@ -6,18 +6,26 @@
     <DevVersion Condition="'$(DevVersion)' == ''">0</DevVersion>
 
     <Version>$(BonsaiVersion)-dev$(DevVersion)</Version>
-    <!-- The FileVersion mainly exists for installers, which cannot include prerelease or build metadata -->
-    <FileVersion>$(BonsaiVersion).$([MSBuild]::Add(60000, $(DevVersion)))</FileVersion>
+    <_FileVersionRevision>$([MSBuild]::Add(60000, $(DevVersion))</_FileVersionRevision>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
     <Version>$(BonsaiVersion)$(CiBuildVersionSuffix)</Version>
     <Version Condition="'$(CiBuildVersion)' != ''">$(CiBuildVersion)</Version>
-    <FileVersion Condition="'$(CiIsForRelease)' != 'true' and '$(CiRunNumber)' != ''">$(BonsaiVersion).$(CiRunNumber)</FileVersion>
+    <_FileVersionRevision>0</_FileVersionRevision>
+    <_FileVersionRevision Condition="'$(CiIsForRelease)' != 'true' and '$(CiRunNumber)' != ''">$(CiRunNumber)</_FileVersionRevision>
   </PropertyGroup>
 
   <PropertyGroup>
     <!-- Force malformed versions to be an error -->
     <WarningsAsErrors>$(WarningsAsErrors);CS7035</WarningsAsErrors>
+  </PropertyGroup>
+
+  <!--
+    This explicit FileVersion mainly exists for the installer and the VSIX template extension, neither of which can take a prerelease suffix or build metadata
+    They also can't utilize GetAssemblyVersion to strip off the prerelease suffix becuase it only exists in the modern SDK so we have to do it manually
+  -->
+  <PropertyGroup>
+    <FileVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(Version)', '[\-\+].+$', '')).$(_FileVersionRevision)</FileVersion>
   </PropertyGroup>
 
   <!--
