@@ -44,11 +44,11 @@
     <_UnchangedBonsaiFileVersion>$(FileVersion)</_UnchangedBonsaiFileVersion>
   </PropertyGroup>
 
-  <Target Name="VersionSanityChecks" BeforeTargets="build" Condition="false">
+  <Target Name="VersionSanityChecks" BeforeTargets="build">
     <Error Condition="'$(ContinuousIntegrationBuild)' == 'true' and '$(CiBuildVersion)' == '' and '$(CiBuildVersionSuffix)' == ''" Text="CI version info not configured." />
     <Error Condition="'$(IsReferenceDummyBuild)' == 'true' and '$(Version)' != '99.99.99'" Text="Reference dummy builds must use hard-coded verison numbers." />
     <Error Condition="'$(Version)' != '$(_UnchangedBonsaiVersion)'" Text="Do not manually specify Version." />
     <Error Condition="'$(FileVersion)' != '$(_UnchangedBonsaiFileVersion)'" Text="Do not manually specify FileVersion." />
-    <Error Condition="'$(PackageVersion)' != '$(Version)'" Text="Do not manually specify PackageVersion." />
+    <Error Condition="'$(PackageVersion)' != '' and '$(PackageVersion)' != '$(Version)'" Text="Do not manually specify PackageVersion." />
   </Target>
 </Project>
