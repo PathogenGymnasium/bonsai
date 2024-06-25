@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # GitHub Actions Utility Functions
 # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions
+import io
 import os
 import sys
 
@@ -51,6 +52,35 @@ def set_environment_variable(name, value):
 
 def add_path(path):
     github_file_command("PATH", path)
+
+class JobSummary:
+    def __init__(self):
+        self.file: io.TextIOBase | None = None
+
+        summary_file_path_var = "GITHUB_STEP_SUMMARY"
+        summary_file_path = os.getenv(summary_file_path_var)
+        if summary_file_path is None:
+            print_warning(f"Failed to open step summary file, {summary_file_path_var} is not set.")
+            return
+
+        try:
+            self.file = open(summary_file_path, 'a')
+        except Exception as ex:
+            print_warning(f"Failed to open step summary file '{summary_file_path}': {ex}")
+
+    def __enter__(self):
+        return self
+    
+    def write_line(self, line: str = '') -> None:
+        if self.file is None:
+            return
+        
+        self.file.write(line)
+        self.file.write('\n')
+    
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        if self.file is not None:
+            self.file.__exit__(exc_type, exc_val, exc_tb)
 
 if __name__ == "__main__":
     args = sys.argv

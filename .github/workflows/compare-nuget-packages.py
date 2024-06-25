@@ -158,43 +158,57 @@ for file in os.listdir(release_packages_path):
     if file.endswith(".nupkg"):
         release_packages.add(nuget.get_package_name(file))
 
-print()
-different_packages.sort()
-if len(different_packages) == 0:
-    print("There are no packages with any changes.")
-else:
-    print("The following packages have changes:")
-    for package in different_packages:
-        print(f"  {package}")
-
-if len(force_released_packages) > 0:
-    print()
-    print("The following packages are configured to release anyway despite not being changed:")
-    force_released_packages.sort()
-    for package in force_released_packages:
-        print(f"  {package}")
-
-    different_packages += force_released_packages
-    different_packages.sort()
-
-# Ensure the next dummy reference and release package sets contain the same packages
-def list_missing_peers(heading: str, packages: set[str]) -> bool:
-    if len(packages) == 0:
-        return False
+with gha.JobSummary() as md:
+    def write_both(line: str = ''):
+        print(line)
+        md.write_line(line)
     
     print()
-    print(heading)
-    for package in packages:
-        print(f"  {package}")
-    return True
+    different_packages.sort()
+    md.write_line("## Packages with changes\n")
+    if len(different_packages) == 0:
+        write_both("There are no packages with any changes.")
+    else:
+        print("The following packages have changes:")
+        for package in different_packages:
+            print(f"  {package}")
+            md.write_line(f"* {package}")
 
-list_missing_peers("The following packages are new for this release:", next_packages - previous_packages)
-list_missing_peers("The following packages were removed during this release:", previous_packages - next_packages)
+    if len(force_released_packages) > 0:
+        write_both()
+        write_both("The following packages are configured to release anyway despite not being changed:")
+        md.write_line()
+        force_released_packages.sort()
+        for package in force_released_packages:
+            print(f"  {package}")
+            md.write_line(f"* {package}")
 
-if list_missing_peers("The following packages exist in the release package artifact, but not in the next dummy reference artifact:", release_packages - next_packages):
-    gha.print_error("Some packages exist in the release package artifact, but not in the next dummy reference artifact.")
-if list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", next_packages - release_packages):
-    gha.print_error("Some packages exist in the next dummy reference artifact, but not in the release package artifact.")
+        different_packages += force_released_packages
+        different_packages.sort()
+
+    # Ensure the next dummy reference and release package sets contain the same packages
+    def list_missing_peers(heading: str, md_heading: str, packages: set[str]) -> bool:
+        if len(packages) == 0:
+            return False
+        
+        print()
+        print(heading)
+        md.write_line(f"## {md_heading}")
+        md.write_line()
+        md.write_line(heading)
+        md.write_line()
+        for package in packages:
+            print(f"  {package}")
+            md.write_line(f"* {package}")
+        return True
+
+    list_missing_peers("The following packages are new for this release:", "New packages", next_packages - previous_packages)
+    list_missing_peers("The following packages were removed during this release:", "Removed packages", previous_packages - next_packages)
+
+    if list_missing_peers("The following packages exist in the release package artifact, but not in the next dummy reference artifact:", "⚠ Missing reference packages", release_packages - next_packages):
+        gha.print_error("Some packages exist in the release package artifact, but not in the next dummy reference artifact.")
+    if list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", "⚠ Missing release packages", next_packages - release_packages):
+        gha.print_error("Some packages exist in the next dummy reference artifact, but not in the release package artifact.")
 
 with open(release_manifest_path, 'x') as manifest:
     for package in different_packages:
