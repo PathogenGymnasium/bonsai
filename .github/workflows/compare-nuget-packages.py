@@ -16,8 +16,12 @@ CHECK_SYMBOL_PACKAGES = False
 
 # The following packages will always release no matter what
 always_release_packages = set([
-    # The bootstrapper package should always be released since the bootstrapper distribution relies on it
     'Bonsai',
+    'Bonsai.Core',
+    'Bonsai.Design',
+    'Bonsai.Editor',
+    'Bonsai.Player',
+    'FakePackage', # 🧶🧶🧶
 ])
 
 if len(sys.argv) != 5:
@@ -210,6 +214,8 @@ with gha.JobSummary() as md:
         gha.print_error("Some packages exist in the release package artifact, but not in the next dummy reference artifact.")
     if list_missing_peers("The following packages exist in the next dummy reference artifact, but not in the release package artifact:", "⚠ Missing release packages", next_packages - release_packages):
         gha.print_error("Some packages exist in the next dummy reference artifact, but not in the release package artifact.")
+    if list_missing_peers("The following packages are marked to always release but do not exist:", "⚠ Missing always-release packages", set(always_release_packages) - release_packages):
+        gha.print_error("Some packages exist in the always-release list, but not in the release package artifact.")
 
 with open(release_manifest_path, 'x') as manifest:
     for package in different_packages:
