@@ -57,7 +57,6 @@ jobs:
     name: ${{matrix.platform.name}} ${{matrix.configuration}}
     runs-on: ${{matrix.platform.os}}
     env:
-      #🧶🧶🧶TODO: Move to build configuration script
       IsReferenceDummyBuild: ${{matrix.dummy-build}}
     steps:
       # ----------------------------------------------------------------------- Checkout
@@ -94,8 +93,8 @@ jobs:
           github_event_name: ${{github.event_name}}
           github_ref: ${{github.ref}}
           github_run_number: ${{github.run_number}}
-          release_version: ${{github.event.release.tag_name}}
           release_is_prerelease: ${{github.event.release.prerelease}}
+          release_version: ${{github.event.release.tag_name}}
           workflow_dispatch_version: ${{github.event.inputs.version}}
           workflow_dispatch_will_publish_packages: ${{github.event.inputs.will_publish_packages}}
    
@@ -106,9 +105,9 @@ jobs:
       - name: Build
         run: dotnet build Bonsai.sln --no-restore --configuration ${{matrix.configuration}}
 
+      # Since packages are core to Bonsai functionality we always pack them even if they won't be collected
       - name: Pack
         id: pack
-        if: matrix.create-packages #🧶🧶🧶🧶TODO: Should we just pack every platform since it's important to Bonsai?
         run: dotnet pack Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}}
 
       # ----------------------------------------------------------------------- Test
@@ -148,7 +147,7 @@ jobs:
       # ----------------------------------------------------------------------- Collect artifacts
       - name: Collect NuGet packages
         uses: actions/upload-artifact@v4
-        if: steps.pack.outcome == 'success' && always()
+        if: matrix.collect-packages && steps.pack.outcome == 'success' && always()
         with:
           name: Packages${{matrix.artifacts-suffix}}
           if-no-files-found: error

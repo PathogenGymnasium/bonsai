@@ -29,15 +29,15 @@ def add(name: str, runner_os: str, rid: str, configurations: list[str] = ['Debug
 windows = add('Windows x64', 'windows-latest', 'win-x64')
 linux = add('Linux x64', 'ubuntu-latest', 'linux-x64')
 
-# Create packages and installer from Windows Release x64
-windows['Release']['create-packages'] = True
+# Collect packages and create installer from Windows Release x64
+windows['Release']['collect-packages'] = True
 windows['Release']['create-installer'] = True
 
 # Build dummy packages to determine which ones changed (not relevant for pull requests since we won't publish)
 def add_dummy(name: str, artifacts_suffix: str):
     dummy = add(name, 'ubuntu-latest', 'linux-x64', ['Release'])['Release']
     dummy['skip-tests'] = True
-    dummy['create-packages'] = True
+    dummy['collect-packages'] = True
     dummy['dummy-build'] = True
     dummy['title'] = name # Don't include configuration in dummy target titles
     dummy['artifacts-suffix'] = artifacts_suffix

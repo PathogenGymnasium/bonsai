@@ -22,10 +22,10 @@ def get_environment_variable(name):
 
 github_event_name = get_environment_variable('github_event_name')
 assert(github_event_name is not None)
-github_run_number = get_environment_variable('github_run_number')
-assert(github_run_number is not None)
 github_ref = get_environment_variable('github_ref')
 assert(github_ref is not None)
+github_run_number = get_environment_variable('github_run_number')
+assert(github_run_number is not None)
 
 gha.fail_if_errors()
 
