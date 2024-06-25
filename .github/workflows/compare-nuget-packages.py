@@ -165,9 +165,10 @@ with gha.JobSummary() as md:
     
     print()
     different_packages.sort()
-    md.write_line("## Packages with changes\n")
+    md.write_line("# Packages with changes\n")
     if len(different_packages) == 0:
-        write_both("There are no packages with any changes.")
+        print("There are no packages with any changes.")
+        md.write_line("*There are no packages with any changes.*")
     else:
         print("The following packages have changes:")
         for package in different_packages:
@@ -193,7 +194,7 @@ with gha.JobSummary() as md:
         
         print()
         print(heading)
-        md.write_line(f"## {md_heading}")
+        md.write_line(f"# {md_heading}")
         md.write_line()
         md.write_line(heading)
         md.write_line()
