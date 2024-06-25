@@ -6,7 +6,7 @@
     <DevVersion Condition="'$(DevVersion)' == ''">0</DevVersion>
 
     <Version>$(BonsaiVersion)-dev$(DevVersion)</Version>
-    <_FileVersionRevision>$([MSBuild]::Add(60000, $(DevVersion))</_FileVersionRevision>
+    <_FileVersionRevision>$([MSBuild]::Add(60000, $(DevVersion)))</_FileVersionRevision>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
     <Version>$(BonsaiVersion)$(CiBuildVersionSuffix)</Version>
