@@ -14,6 +14,12 @@ import nuget
 # changed were external to the package, so we don't check them.
 CHECK_SYMBOL_PACKAGES = False
 
+# The following packages will always release no matter what
+always_release_packages = set([
+    # The bootstrapper package should always be released since the bootstrapper distribution relies on it
+    'Bonsai',
+])
+
 if len(sys.argv) != 5:
     gha.print_error('Usage: compare-nuget-packages.py <previous-dummy-packages-path> <next-dummy-packages-path> <release-packages-path> <release-manifest-path>')
     sys.exit(1)
@@ -123,6 +129,7 @@ def nuget_packages_are_equivalent(a_path: Path, b_path: Path, is_snupkg: bool = 
     return is_equvalent
 
 different_packages = []
+force_released_packages = []
 next_packages = set()
 for file in os.listdir(next_packages_path):
     if not file.endswith(".nupkg"):
@@ -138,6 +145,8 @@ for file in os.listdir(next_packages_path):
     if not nuget_packages_are_equivalent(next_packages_path / file, previous_packages_path / file):
         verbose_log(f"'{file}' differs")
         different_packages.append(package_name)
+    elif package_name in always_release_packages:
+        force_released_packages.append(package_name)
 
 previous_packages = set()
 for file in os.listdir(previous_packages_path):
@@ -157,6 +166,16 @@ else:
     print("The following packages have changes:")
     for package in different_packages:
         print(f"  {package}")
+
+if len(force_released_packages) > 0:
+    print()
+    print("The following packages are configured to release anyway despite not being changed:")
+    force_released_packages.sort()
+    for package in force_released_packages:
+        print(f"  {package}")
+
+    different_packages += force_released_packages
+    different_packages.sort()
 
 # Ensure the next dummy reference and release package sets contain the same packages
 def list_missing_peers(heading: str, packages: set[str]) -> bool:
