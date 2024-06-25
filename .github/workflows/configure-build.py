@@ -101,6 +101,7 @@ gha.fail_if_errors()
 print(f"Configuring build environment to build{' and release' if is_for_release else ''} version {version}")
 gha.set_environment_variable('CiBuildVersion', version)
 gha.set_environment_variable('CiBuildVersionSuffix', version_suffix)
+gha.set_environment_variable('CiRunNumber', github_run_number)
 gha.set_environment_variable('CiIsForRelease', str(is_for_release).lower())
 
 gha.fail_if_errors()

@@ -35,4 +35,5 @@
       enumerated by the time it's evaluated and break NuGet packing -->
     <DebugType Condition="'$(IsReferenceDummyBuild)' == 'true'">none</DebugType>
   </PropertyGroup>
+  <Import Project="Versioning.props" />
 </Project>

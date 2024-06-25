@@ -15,6 +15,7 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <DefineConstants Condition="'$(Configuration)' == 'Debug'">Debug</DefineConstants>
+    <DefineConstants>$(DefineConstants);BonsaiDisplayVersion=$(Version)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Bundle.wxs" />

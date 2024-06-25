@@ -2,12 +2,22 @@
   <Import Project="CurrentVersion.props" />
 
   <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
+    <!-- When making local builds, developers can override DevVersion here or on the command line if they need multiple local versions of Bonsai for whatever reason -->
     <DevVersion Condition="'$(DevVersion)' == ''">0</DevVersion>
+
     <Version>$(BonsaiVersion)-dev$(DevVersion)</Version>
+    <!-- The FileVersion mainly exists for installers, which cannot include prerelease or build metadata -->
+    <FileVersion>$(BonsaiVersion).$([MSBuild]::Add(60000, $(DevVersion)))</FileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
     <Version>$(BonsaiVersion)$(CiBuildVersionSuffix)</Version>
     <Version Condition="'$(CiBuildVersion)' != ''">$(CiBuildVersion)</Version>
+    <FileVersion Condition="'$(CiIsForRelease)' != 'true' and '$(CiRunNumber)' != ''">$(BonsaiVersion).$(CiRunNumber)</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Force malformed versions to be an error -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS7035</WarningsAsErrors>
   </PropertyGroup>
 
   <!--
@@ -24,13 +34,21 @@
   -->
   <PropertyGroup Condition="'$(IsReferenceDummyBuild)' == 'true'">
     <Version>99.99.99</Version>
+    <FileVersion>99.99.99.00</FileVersion>
     <SourceRevisionId>0000000000000000000000000000000000000000</SourceRevisionId>
     <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <_UnchangedBonsaiVersion>$(Version)</_UnchangedBonsaiVersion>
+    <_UnchangedBonsaiFileVersion>$(FileVersion)</_UnchangedBonsaiFileVersion>
   </PropertyGroup>
 
   <Target Name="VersionSanityChecks" BeforeTargets="build" Condition="false">
     <Error Condition="'$(ContinuousIntegrationBuild)' == 'true' and '$(CiBuildVersion)' == '' and '$(CiBuildVersionSuffix)' == ''" Text="CI version info not configured." />
     <Error Condition="'$(IsReferenceDummyBuild)' == 'true' and '$(Version)' != '99.99.99'" Text="Reference dummy builds must use hard-coded verison numbers." />
+    <Error Condition="'$(Version)' != '$(_UnchangedBonsaiVersion)'" Text="Do not manually specify Version." />
+    <Error Condition="'$(FileVersion)' != '$(_UnchangedBonsaiFileVersion)'" Text="Do not manually specify FileVersion." />
     <Error Condition="'$(PackageVersion)' != '$(Version)'" Text="Do not manually specify PackageVersion." />
   </Target>
 </Project>
