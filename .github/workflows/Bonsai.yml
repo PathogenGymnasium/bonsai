@@ -113,7 +113,7 @@ jobs:
 
       # ----------------------------------------------------------------------- Test
       - name: Test
-        if: matrix.dummy-build != 'true'
+        if: matrix.dummy-build != true
         run: dotnet test Bonsai.sln --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal
 
       # ----------------------------------------------------------------------- Repack bootstrapper
