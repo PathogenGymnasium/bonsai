@@ -28,8 +28,12 @@ with zipfile.ZipFile(output_path, 'x', zipfile.ZIP_DEFLATED, compresslevel=9) as
         '    <add key="Community Packages" value="https://www.myget.org/F/bonsai-community/api/v3/index.json" />',
     ]
 
+    nuget_api_url = os.getenv('NUGET_API_URL')
+    if nuget_api_url is not None:
+        nuget_config.append('    <add key="NuGet Package Testing Feed" value="{nuget_api_url}" />')
+
     # Unstable builds of Bonsai will automatically reference the GitHub Packages feed
-    if os.getenv('GITHUB_EVENT_NAME') != 'push':
+    if os.getenv('IS_FULL_RELEASE') == 'false':
         repo_owner = os.getenv('GITHUB_REPOSITORY_OWNER') or 'bonsai-rx'
         nuget_config.append(f'    <add key="Bonsai Unstable" value="https://nuget.pkg.github.com/{repo_owner}/index.json" />')
         nuget_config.append('  </packageSources>')

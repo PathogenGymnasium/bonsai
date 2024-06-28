@@ -125,6 +125,10 @@ jobs:
         id: create-portable-zip
         if: matrix.create-installer
         run: python .github/workflows/create-portable-zip.py artifacts/Bonsai.zip ${{matrix.configuration}}
+        env:
+          NUGET_API_URL: ${{vars.NUGET_API_URL}}
+          # This should be kept in sync with publish-packages-nuget-org
+          IS_FULL_RELEASE: ${{github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.will_publish_packages == 'true' && github.event.inputs.version != '')}}
 
       # ----------------------------------------------------------------------- Build Visual Studio templates
       - name: Build Visual Studio templates
@@ -297,6 +301,7 @@ jobs:
     needs: [build-and-test, determine-changed-packages]
     # Release builds always publish packages to NuGet.org
     # Workflow dispatch builds will only publish packages if enabled and an explicit version number is given
+    # This should be kept in sync with create-portable-zip
     if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.will_publish_packages == 'true' && github.event.inputs.version != '')
     steps:
       # ----------------------------------------------------------------------- Checkout
