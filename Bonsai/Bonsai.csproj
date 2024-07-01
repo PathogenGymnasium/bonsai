@@ -80,7 +80,9 @@
     <Error Condition="!$([System.OperatingSystem]::IsWindows())" Text="Repacking is only supported on Windows." />
     <Error Condition="!Exists('$(OutputPath)Bonsai.exe')" Text="Project must be built before repacking. '$(OutputPath)Bonsai.exe' not found." />
     <Error Condition="'$(RepackedOutputPath)' == '' or '$(RepackedOutputFilePath)' == ''" Text="Repacked output path not configured." />
+
     <MakeDir Directories="$(RepackedOutputPath)" />
+
     <PropertyGroup>
       <_IlRepackCommand>
 "$(ILRepack)"
@@ -105,5 +107,15 @@
       </_IlRepackCommand>
     </PropertyGroup>
     <Exec WorkingDirectory="$(RepackedOutputPath)" Command="$(_IlRepackCommand.Replace('%0D', ' ').Replace('%0A', ' '))" UseCommandProcessor="false" />
+  </Target>
+
+  <PropertyGroup Condition="'$(UseRepackForBootstrapperPackage)' == 'true'">
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+  <Target Name="UseRepackForPack" Condition="'$(UseRepackForBootstrapperPackage)' == 'true'" BeforeTargets="GenerateNuspec;_GetPackageFiles" DependsOnTargets="ConfigureRepack">
+    <Error Condition="!Exists('$(RepackedOutputFilePath)')" Text="Project must be repacked before repacking. '$(RepackedOutputFilePath)' not found." />
+    <ItemGroup>
+      <None Include="$(RepackedOutputFilePath)" Pack="true" PackagePath="lib/$(TargetFramework)/" Visible="false" />
+    </ItemGroup>
   </Target>
 </Project>
