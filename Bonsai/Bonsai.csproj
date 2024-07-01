@@ -68,12 +68,8 @@
     <PropertyGroup>
       <RepackedOutputPath>$(BaseOutputPath)$(ArtifactsPivots)-repacked\</RepackedOutputPath>
       <RepackedOutputFilePath>$(RepackedOutputPath)$(TargetFileName)</RepackedOutputFilePath>
+      <RepackedOutputSymbolFilePath>$([System.IO.Path]::ChangeExtension('$(RepackedOutputFilePath)', '.pdb'))</RepackedOutputSymbolFilePath>
     </PropertyGroup>
-  </Target>
-  
-  <!-- Clean happens after build to avoid someone accidentally using a stale repack -->
-  <Target Name="CleanRepack" AfterTargets="Build;Clean" DependsOnTargets="ConfigureRepack" Condition="Exists('$(RepackedOutputFilePath)')">
-    <Delete Files="$(RepackedOutputFilePath)" />
   </Target>
 
   <Target Name="Repack" DependsOnTargets="ConfigureRepack">
@@ -109,13 +105,18 @@
     <Exec WorkingDirectory="$(RepackedOutputPath)" Command="$(_IlRepackCommand.Replace('%0D', ' ').Replace('%0A', ' '))" UseCommandProcessor="false" />
   </Target>
 
-  <PropertyGroup Condition="'$(UseRepackForBootstrapperPackage)' == 'true'">
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-  </PropertyGroup>
-  <Target Name="UseRepackForPack" Condition="'$(UseRepackForBootstrapperPackage)' == 'true'" BeforeTargets="GenerateNuspec;_GetPackageFiles" DependsOnTargets="ConfigureRepack">
+  <Target Name="UseRepackOutputForPackage" Condition="'$(UseRepackForBootstrapperPackage)' == 'true'" AfterTargets="BuiltProjectOutputGroup" DependsOnTargets="ConfigureRepack">
     <Error Condition="!Exists('$(RepackedOutputFilePath)')" Text="Project must be repacked before repacking. '$(RepackedOutputFilePath)' not found." />
     <ItemGroup>
-      <None Include="$(RepackedOutputFilePath)" Pack="true" PackagePath="lib/$(TargetFramework)/" Visible="false" />
+      <BuiltProjectOutputGroupOutput Remove="@(BuiltProjectOutputGroupOutput)" />
+      <BuiltProjectOutputGroupOutput Include="$(RepackedOutputFilePath)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="UseRepackOutputForSymbolPackage" Condition="'$(UseRepackForBootstrapperPackage)' == 'true'" AfterTargets="DebugSymbolsProjectOutputGroup" DependsOnTargets="ConfigureRepack">
+    <Error Condition="!Exists('$(RepackedOutputSymbolFilePath)')" Text="Project must be repacked before repacking. '$(RepackedOutputFilePath)' not found." />
+    <ItemGroup>
+      <DebugSymbolsProjectOutputGroupOutput Remove="@(DebugSymbolsProjectOutputGroupOutput)" />
+      <DebugSymbolsProjectOutputGroupOutput Include="$(RepackedOutputSymbolFilePath)" />
     </ItemGroup>
   </Target>
 </Project>
