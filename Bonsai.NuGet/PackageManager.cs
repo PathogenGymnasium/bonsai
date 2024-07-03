@@ -183,6 +183,7 @@ namespace Bonsai.NuGet
                 var packageVersion = ignoreDependencies
                     ? new VersionRange(package.Version, maxVersion: package.Version, includeMaxVersion: true)
                     : new VersionRange(package.Version, new FloatRange(NuGetVersionFloatBehavior.None));
+                packageVersion = new VersionRange(package.Version, maxVersion: package.Version, includeMaxVersion: true); //TODO: REMOVE THIS 🧶🧶🧶
                 await GetPackageDependencies(package.Id, packageVersion, projectFramework, cacheContext, repositories, sourcePackages, logger, ignoreDependencies, token);
 
                 var resolverContext = new PackageResolverContext(
