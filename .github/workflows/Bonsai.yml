@@ -47,6 +47,7 @@ jobs:
         run: python .github/workflows/create-build-matrix.py
         env:
           enable_package_comparison: ${{vars.ENABLE_PACKAGE_COMPARISON}}
+          will_publish_packages: ${{github.event.inputs.will_publish_packages}}
 
   # =====================================================================================================================================================================
   # Build, test, and package
