@@ -43,7 +43,10 @@ def add_dummy(name: str, artifacts_suffix: str):
     dummy['artifacts-suffix'] = artifacts_suffix
     return dummy
 
-if os.getenv('GITHUB_EVENT_NAME') != 'pull_request':
+enable_package_comparison = os.getenv('enable_package_comparison') == 'true'
+github_event_name = os.getenv('GITHUB_EVENT_NAME')
+
+if github_event_name == 'pull_request' and enable_package_comparison:
     add_dummy('Previous Dummy', '-dummy-prev')['checkout-ref'] = 'refs/tags/latest'
     add_dummy('Next Dummy', '-dummy-next')
 
