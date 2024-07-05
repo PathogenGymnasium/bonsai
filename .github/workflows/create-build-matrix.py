@@ -50,7 +50,7 @@ if github_event_name == 'pull_request' and enable_package_comparison:
     add_dummy('Previous Dummy', '-dummy-prev')['checkout-ref'] = 'refs/tags/latest'
     add_dummy('Next Dummy', '-dummy-next')
 
-# Fail runs which logically must publish packages if we won't be able to do package comparison
+# Fail early if we won't be able to do package comparison and the run must publish packages to make logical sense
 # Package comparison requires the `latest` tag to exist, but it will usually either be missing or invalid for forks so we require it to be opt-in
 if not enable_package_comparison:
     if github_event_name == 'release' or (github_event_name == 'workflow_dispatch' and os.getenv('will_publish_packages') == 'true'):
